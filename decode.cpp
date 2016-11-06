@@ -7,7 +7,7 @@
 
 using namespace std;
 
-ULLFile* reg;
+RegisterFile* reg;
 map<string, string> typeIndex;
 
 
