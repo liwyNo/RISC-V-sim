@@ -36,4 +36,5 @@ public:
 	void setFloatRegVal(ULL value, int num) { f[num] = value; }
 	ULL getFloatRegVal(int num) { return f[num]; }
 
-}reg;
+};
+#endif

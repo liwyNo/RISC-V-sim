@@ -3,16 +3,23 @@
 #include <stack>
 #include <map>
 #include <cstring>
+#include <iostream>
 #include "register.h"
-#include "memeory.h"
+#include "vmm.h"
 
 using namespace std;
 
-map<string, string> typeIndex;
-
-
+map<string, int> typeIndex;
+RegisterFile * reg;
+extern VM memory;
 int content;	//the integer value of one instruction
 bool canjump = false;
+void memoryWrite(ULL offset, ULL value, unsigned char bit){
+    ULL ori = memory[offset];
+    ULL mask = (1ULL << bit) - 1;
+    ori = (ori & ~mask) | (value & mask);
+    memory[offset] = ori;
+}
 
 //Initialize the map index and register file
 void Initialize(ULL startAddr) {
@@ -23,18 +30,18 @@ void Initialize(ULL startAddr) {
 	R-TYPE:1; I-TYPE:2; S-TYPE:3; SB-TYPE:4; UJ-TYPE:5; U-TYPE:6; SYS-TYPE:7;
 	 */
 
-	typeIndex.insert(pair<string, string>("0110011", 1));
-	typeIndex.insert(pair<string, string>("0010011", 2));
-	typeIndex.insert(pair<string, string>("0100011", 3));
-	typeIndex.insert(pair<string, string>("0000011", 2));
-	typeIndex.insert(pair<string, string>("1100011", 4));
-	typeIndex.insert(pair<string, string>("1100111", 2));
-	typeIndex.insert(pair<string, string>("1101111", 5));
-	typeIndex.insert(pair<string, string>("0010111", 6));
-	typeIndex.insert(pair<string, string>("0110111", 6));
-	typeIndex.insert(pair<string, string>("0111011", 1));
-	typeIndex.insert(pair<string, string>("0011011", 2));
-	typeIndex.insert(pair<string, string>("1110011", 7));
+	typeIndex.insert(pair<string, int>("0110011", 1));
+	typeIndex.insert(pair<string, int>("0010011", 2));
+	typeIndex.insert(pair<string, int>("0100011", 3));
+	typeIndex.insert(pair<string, int>("0000011", 2));
+	typeIndex.insert(pair<string, int>("1100011", 4));
+	typeIndex.insert(pair<string, int>("1100111", 2));
+	typeIndex.insert(pair<string, int>("1101111", 5));
+	typeIndex.insert(pair<string, int>("0010111", 6));
+	typeIndex.insert(pair<string, int>("0110111", 6));
+	typeIndex.insert(pair<string, int>("0111011", 1));
+	typeIndex.insert(pair<string, int>("0011011", 2));
+	typeIndex.insert(pair<string, int>("1110011", 7));
 }
 
 
@@ -75,7 +82,7 @@ void sltu(ULL rs1Val, ULL rs2Val, int rdInt) {
 		rdVal = 0;
 	reg->setIntRegVal(rdVal, rdInt);
 }
-void xor(ULL rs1Val, ULL rs2Val, int rdInt) {
+void _xor(ULL rs1Val, ULL rs2Val, int rdInt) {
 	LL rdVal = (LL)rs1Val ^ (LL)rs2Val;
 	reg->setIntRegVal(rdVal, rdInt);
 }
@@ -84,11 +91,11 @@ void srl(ULL rs1Val, ULL rs2Val, int rdInt) {
 	ULL rdVal = rs1Val >> rs2Val;
 	reg->setIntRegVal(rdVal, rdInt);
 }
-void or(ULL rs1Val, ULL rs2Val, int rdInt) {
+void _or(ULL rs1Val, ULL rs2Val, int rdInt) {
 	LL rdVal = (LL)rs1Val | (LL)rs2Val;
 	reg->setIntRegVal(rdVal, rdInt);	
 }
-void and(ULL rs1Val, ULL rs2Val, int rdInt) {
+void _and(ULL rs1Val, ULL rs2Val, int rdInt) {
 	LL rdVal = (LL)rs1Val & (LL)rs2Val;
 	reg->setIntRegVal(rdVal, rdInt);	
 }
@@ -141,7 +148,7 @@ void R_TYPE_funct3_1(string instruction) {
 	//common part ends hiere
 
 	string funct3 = instruction.substr(17, 3);
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 000:
 			sub(rs1Val, rs2Val, rdInt);
 			break;
@@ -166,7 +173,7 @@ void R_TYPE_funct3_2(string instruction) {
 	//common part ends here
 
 	string funct3 = instruction.substr(17, 3);
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 000:
 			add(rs1Val, rs2Val, rdInt);
 			break;
@@ -180,16 +187,16 @@ void R_TYPE_funct3_2(string instruction) {
 			sltu(rs1Val, rs2Val, rdInt);
 			break;
 		case 100:
-			xor(rs1Val, rs2Val, rdInt);
+			_xor(rs1Val, rs2Val, rdInt);
 			break;
 		case 101:
 			srl(rs1Val, rs2Val, rdInt);
 			break;
 		case 110:
-			or(rs1Val, rs2Val, rdInt);
+			_or(rs1Val, rs2Val, rdInt);
 			break;
 		case 111:
-			and(rs1Val, rs2Val, rdInt);
+			_and(rs1Val, rs2Val, rdInt);
 			break;
 		default:
 			cout << "Error when parsing instruction: " << instruction << endl;
@@ -200,15 +207,15 @@ void R_TYPE_funct3_2(string instruction) {
 }
 void R_TYPE_funct3_3(string instruction) {
 	//aLL R-TYPE instructions have the same part
-	int rs1Int = (content >> 15) & 31;
-	int rs2Int = (content >> 20) & 31;
+	int rs1Val = (content >> 15) & 31;
+	int rs2Val = (content >> 20) & 31;
 	int rdInt = (content >> 7) & 31;
 
-	ULL rs1Val = reg->getIntRegVal(rs1Int);
+	rs1Val = reg->getIntRegVal(rs1Val);
 	//common part ends here
 
 	string funct3 = instruction.substr(17, 3);
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 000:
 			subw(rs1Val, rs2Val, rdInt);
 			break;
@@ -224,15 +231,15 @@ void R_TYPE_funct3_3(string instruction) {
 }
 void R_TYPE_funct3_4(string instruction) {
 	//aLL R-TYPE instructions have the same part
-	int rs1Int = (content >> 15) & 31;
-	int rs2Int = (content >> 20) & 31;
+	int rs1Val = (content >> 15) & 31;
+	int rs2Val = (content >> 20) & 31;
 	int rdInt = (content >> 7) & 31;
 
-	ULL rs1Val = reg->getIntRegVal(rs1Int);
+	rs1Val = reg->getIntRegVal(rs1Val);
 	//common part ends here
 
 	string funct3 = instruction.substr(17, 3);
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 000:
 			addw(rs1Val, rs2Val, rdInt);
 			break;
@@ -251,7 +258,7 @@ void R_TYPE_funct3_4(string instruction) {
 }
 void R_TYPE_funct7_1(string instruction) {
 	string funct7 = instruction.substr(0, 7);
-	switch(atoi(funct7)) {
+	switch(atoi(funct7.c_str())) {
 		case 0100000:
 			R_TYPE_funct3_1(instruction);
 			break;
@@ -259,6 +266,7 @@ void R_TYPE_funct7_1(string instruction) {
 			R_TYPE_funct3_2(instruction);
 			break;
 		case 0000001:
+            void M_TYPE_funct3_1(string instruction);
 			M_TYPE_funct3_1(instruction);
 			break;
 		default:
@@ -270,7 +278,7 @@ void R_TYPE_funct7_1(string instruction) {
 }
 void R_TYPE_funct7_2(string instruction) {
 	string funct7 = instruction.substr(0, 7);
-	switch(atoi(funct7)) {
+	switch(atoi(funct7.c_str())) {
 		case 0100000:
 			R_TYPE_funct3_3(instruction);
 			break;
@@ -278,6 +286,7 @@ void R_TYPE_funct7_2(string instruction) {
 			R_TYPE_funct3_4(instruction);
 			break;
 		case 0000001:
+            void M_TYPE_funct3_2(string instruction);
 			M_TYPE_funct3_2(instruction);
 		default:
 			cout << "Error when parsing instruction: " << instruction << endl;
@@ -286,9 +295,9 @@ void R_TYPE_funct7_2(string instruction) {
 			return;
 	}
 }
-void R_TYPE_opcode(instruction) {
+void R_TYPE_opcode(string instruction) {
 	string opcode = instruction.substr(25, 7);
-	switch(atoi(opcode)) {
+	switch(atoi(opcode.c_str())) {
 		case 0110011:
 			R_TYPE_funct7_1(instruction);
 			break;
@@ -368,7 +377,7 @@ void sltiu(string instruction) {
 	ULL rs1Val = reg->getIntRegVal(rs1Int);
 	int rdVal = 0;
 	if (rs1Val < immediateNum )
-		rdVal = 1
+		rdVal = 1;
 	reg->setIntRegVal(rdVal, rdInt);
 }
 void xori(string instruction) {
@@ -404,7 +413,7 @@ void lb(string instruction) {
 	LL immediateNum = (LL)content >> 20;
 
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
-	LL loadData = (LL)memoryRead( (ULL)(immediateNum + rs1Val), 1 );
+	LL loadData = (LL)memory[(ULL)(immediateNum + rs1Val)];
 	loadData = (loadData << 56) >> 56;	//return value can be sign-extended
 	reg->setIntRegVal((ULL)loadData, rdInt);
 }
@@ -414,7 +423,7 @@ void lh(string instruction) {
 	LL immediateNum = (LL)content >> 20;
 
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
-	LL loadData = (LL)memoryRead( (ULL)(immediateNum + rs1Val), 2 );
+	LL loadData = (LL)memory[(ULL)(immediateNum + rs1Val)];
 	loadData = (loadData << 48) >> 48;	//same as the reason mentioned above
 	reg->setIntRegVal((ULL)loadData, rdInt);
 }
@@ -424,7 +433,7 @@ void lw(string instruction) {
 	LL immediateNum = (LL)content >> 20;
 
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
-	LL loadData = (LL)memoryRead( (ULL)(immediateNum + rs1Val), 4 );
+	LL loadData = (LL)memory[(ULL)(immediateNum + rs1Val)];
 	loadData = (loadData << 32) >> 32;
 	reg->setIntRegVal((ULL)loadData, rdInt);
 }
@@ -434,7 +443,7 @@ void ld(string instruction) {
 	LL immediateNum = (LL)content >> 20;
 
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
-	LL loadData = (LL)memoryRead( (ULL)(immediateNum + rs1Val), 8 );
+	LL loadData = (LL)memory[(ULL)(immediateNum + rs1Val)];
 	reg->setIntRegVal((ULL)loadData, rdInt);
 }
 void lbu(string instruction) {
@@ -443,7 +452,7 @@ void lbu(string instruction) {
 	LL immediateNum = content >> 20;
 
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
-	ULL loadData = memoryRead( (ULL)(immediateNum + rs1Val), 1 );
+	ULL loadData = memory[(ULL)(immediateNum + rs1Val)];
 	loadData = loadData & 255;
 	reg->setIntRegVal((ULL)loadData, rdInt);
 }
@@ -453,7 +462,7 @@ void lhu(string instruction) {
 	LL immediateNum = content >> 20;
 
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
-	ULL loadData = memoryRead( (ULL)(immediateNum + rs1Val), 2);
+	ULL loadData = memory[(ULL)(immediateNum + rs1Val)];
 	loadData = loadData & 65535;
 	reg->setIntRegVal((ULL)loadData, rdInt);
 }
@@ -463,8 +472,8 @@ void lwu(string instruction) {
 	LL immediateNum = content >> 20;
 
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
-	ULL loadData = memoryRead( (ULL)(immediateNum + rs1Val), 4 );
-	long long mask = (1 << 63) >> 31;
+	ULL loadData = memory[(ULL)(immediateNum + rs1Val)];
+	long long mask = (1LL << 63) >> 31;
 	loadData = loadData & (~mask);
 	reg->setIntRegVal((ULL)loadData, rdInt);
 }
@@ -521,20 +530,21 @@ void sraiw(string instruction) {
 void I_TYPE_funct3_1(string instruction) {
 	string funct3 = instruction.substr(17, 3);
 
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 001:
 			slli(instruction);
 			break;
-		case 101:
-			string funct7 = instruction.substr(0, 7);
-			switch(atoi(funct7)) {
-				case 0000000:
-					srli(instruction);
-					break;
-				case 0100000:
-					srai(instruction);
-					break;
-			}
+		case 101: {
+            string funct7 = instruction.substr(0, 7);
+            switch (atoi(funct7.c_str())) {
+                case 0000000:
+                    srli(instruction);
+                    break;
+                case 0100000:
+                    srai(instruction);
+                    break;
+            }
+        }
 			break;
 		case 000:
 			addi(instruction);
@@ -564,7 +574,7 @@ void I_TYPE_funct3_1(string instruction) {
 void I_TYPE_funct3_2(string instruction) {
 	string funct3 = instruction.substr(17, 3);
 
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 000:
 			lb(instruction);
 			break;
@@ -595,23 +605,24 @@ void I_TYPE_funct3_2(string instruction) {
 }
 void I_TYPE_funct3_3(string instruction) {
 	string funct3 = instruction.substr(17, 3);
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 000:
 			addiw(instruction);
 			break;
 		case 001:
 			slliw(instruction);
 			break;
-		case 101:
-			string funct7 = instruction.substr(0, 7);
-			switch(funct7) {
-				case 0000000:
-					srliw(instruction);
-					break;
-				case 0100000:
-					sraiw(instruction);
-					break;
-			}
+		case 101: {
+            string funct7 = instruction.substr(0, 7);
+            switch (atoi(funct7.c_str())) {
+                case 0000000:
+                    srliw(instruction);
+                    break;
+                case 0100000:
+                    sraiw(instruction);
+                    break;
+            }
+        }
 			break;
 		default:
 			cout << "Error when parsing instruction: " << instruction << endl;
@@ -622,7 +633,7 @@ void I_TYPE_funct3_3(string instruction) {
 }
 void I_TYPE_opcode(string instruction) {
 	string opcode = instruction.substr(25, 7);
-	switch(atoi(opcode)) {
+	switch(atoi(opcode.c_str())) {
 		case 0010011:
 			I_TYPE_funct3_1(instruction);
 			break;
@@ -690,10 +701,10 @@ void sw(string instruction) {
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
 	LL memoryAddr = immediateNum + rs1Val;
 	ULL rs2Val = reg->getIntRegVal(rs2Int);
-	long long mask = (1 << 63) >> 31;
+	long long mask = (1LL << 63) >> 31;
 	rs2Val &= (~mask);
 
-	writeMemory(memoryAddr, rs2Val, 4);
+	memoryWrite(memoryAddr, rs2Val, 4);
 }
 void sd(string instruction) {
 	int rs1Int = (content >> 15) & 31;
@@ -706,11 +717,11 @@ void sd(string instruction) {
 	LL memoryAddr = immediateNum + rs1Val;
 	ULL rs2Val = reg->getIntRegVal(rs2Int);
 
-	writeMemory(memoryAddr, rs2Val, 8);
+	memoryWrite(memoryAddr, rs2Val, 8);
 }
 void S_TYPE_funct3(string instruction) {
 	string funct3 = instruction.substr(17, 3);
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 000:
 			sb(instruction);
 			break;
@@ -751,7 +762,7 @@ void beq(string instruction) {
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
 		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
-		ULL immediateNum = (immediateNum << 19) >> 19;
+		immediateNum = (immediateNum << 19) >> 19;
 
 		canjump = true;
 		reg->changePC(immediateNum);
@@ -768,7 +779,7 @@ void bne(string instruction) {
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
 		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
-		ULL immediateNum = (immediateNum << 19) >> 19;
+		immediateNum = (immediateNum << 19) >> 19;
 
 		canjump = true;
 		reg->changePC(immediateNum);
@@ -785,7 +796,7 @@ void blt(string instruction) {
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
 		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
-		ULL immediateNum = (immediateNum << 19) >> 19;
+		immediateNum = (immediateNum << 19) >> 19;
 
 		canjump = true;
 		reg->changePC(immediateNum);
@@ -802,7 +813,7 @@ void bge(string instruction) {
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
 		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
-		ULL immediateNum = (immediateNum << 19) >> 19;
+		immediateNum = (immediateNum << 19) >> 19;
 
 		canjump = true;
 		reg->changePC(immediateNum);
@@ -819,7 +830,7 @@ void bltu(string instruction) {
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
 		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
-		ULL immediateNum = (immediateNum << 19) >> 19;
+		immediateNum = (immediateNum << 19) >> 19;
 
 		canjump = true;
 		reg->changePC(immediateNum);
@@ -836,7 +847,7 @@ void bgeu(string instruction) {
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
 		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
-		ULL immediateNum = (immediateNum << 19) >> 19;
+		immediateNum = (immediateNum << 19) >> 19;
 
 		canjump = true;
 		reg->changePC(immediateNum);
@@ -844,7 +855,7 @@ void bgeu(string instruction) {
 }
 void SB_TYPE_funct3(string instruction) {
 	string funct3 = instruction.substr(17, 3);
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 000:
 			beq(instruction);
 			break;
@@ -895,7 +906,7 @@ void auipc(string instruction) {
 }
 void U_TYPE_opcode(string instruction) {
 	string opcode = instruction.substr(25, 7);
-	switch(atoi(opcode)) {
+	switch(atoi(opcode.c_str())) {
 		case 0110111:
 			lui(instruction);
 			break;
@@ -944,6 +955,8 @@ End UJ-TYPE decode
 This part parses some system instructions
  */
 void ecall() {
+    //make it can compile first.
+#define systemCall
 	LL sys_call_num = reg->getIntRegVal(7);
 	systemCall((int)sys_call_num);
 }
@@ -952,7 +965,7 @@ void ebreak() {
 }
 void E_INS(string instruction) {
 	string diffPart = instruction.substr(11, 1);
-	switch(atoi(diffPart)) {
+	switch(atoi(diffPart.c_str())) {
 		case 0:
 			ecall();
 			break;
@@ -964,7 +977,7 @@ void E_INS(string instruction) {
 }
 void SYS_INSTRUCTION(string instruction) {
 	string funct3 = instruction.substr(17, 3);
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 000:
 			E_INS(instruction);
 			break;
@@ -1245,7 +1258,7 @@ void M_TYPE_funct3_1(string instruction) {
 	//common part ends here
 
 	string funct3 = instruction.substr(17, 3);
-	switch(atoi(funct3)) {
+	switch(atoi(funct3.c_str())) {
 		case 000:
 			MUL((LL)rs1Val, (LL)rs2Val, rdInt);
 			break;
@@ -1289,7 +1302,7 @@ void M_TYPE_funct3_2(string instruction) {
 	//common part ends here
 
 	string funct3 = instruction.substr(17, 3);
-	int tempInt = atoi(funct3);
+	int tempInt = atoi(funct3.c_str());
 	switch(tempInt) {
 		case 000:
 			MULW((LL)rs1Val, (LL)rs2Val, rdInt);
@@ -1324,7 +1337,7 @@ void getOpcode(string instruction) {
 	R-TYPE:1; I-TYPE:2; S-TYPE:3; SB-TYPE:4; UJ-TYPE:5; U-TYPE:6; SYS-TYPE:7;
 	 */
 
-	switch(typeIndex(opcode)) {
+	switch(typeIndex[opcode]) {
 		case 1:
 			R_TYPE_opcode(instruction);
 			break;
@@ -1360,7 +1373,7 @@ void decode(ULL startAddr) {
 	while(true) {
 		memset(tempChar, 0, sizeof(tempChar));
 
-		content = mymem->romemRead(reg->getPC(),4);
+		content = memory[reg->getPC()];
 		memcpy((void *)tempChar, (void *)(&content), 4);
 		string instruction(tempChar);
 		getOpcode(instruction);

@@ -118,7 +118,7 @@ bool elf_check_header(char * elf_buffer, int elf_class, Elf_Sword & entry, Elf_S
     phsize = elf_header.e_phentsize;
     return true;
 }
-bool load_program(char * elf_buffer, Elf_Sword phoff, int no, Elf_Half phsize){
+bool load_program(char * elf_buffer, VM& memory, Elf_Sword phoff, int no, Elf_Half phsize){
     Elf64_Phdr pheader(elf_buffer + phoff + no * phsize);
     LOGF("DEBUG -- program_header:");
     HEXS("\tp_type: ", &pheader.p_type, 4);
@@ -161,7 +161,7 @@ int main(int argc, char ** argv){
     check(elf_check_header(elf_buffer, elf_class, entry, phoff, phnum, phsize));
 
     for(int i = 0; i < phnum; ++i){
-        check(load_program(elf_buffer, phoff, i, phsize));
+        check(load_program(elf_buffer, memory, phoff, i, phsize));
     }
 
     delete elf_buffer;
