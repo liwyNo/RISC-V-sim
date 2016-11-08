@@ -20,7 +20,7 @@ struct elf_ident{
     elf_ident(const char * elf_buffer);
 };
 //EI_MAG
-const Elf_Word EIMAG      = 0x7f454c46;//0x7F followed by ELF(45 4c 46)
+const Elf_Word EIMAG      = 0x464c457f;//0x7F followed by ELF(45 4c 46)
 //EI_CLASS
 const Elf_Char EICLASS_32   = 1;        //32bit format
 const Elf_Char EICLASS_64   = 2;        //64bit format
@@ -65,7 +65,7 @@ struct elf64_header{
     Elf_Half        e_phentsize;        //Size of program headers
     Elf_Half        e_phnum;            //Number of program headers
     Elf_Half        e_shentsize;        //Size of section headers
-    Elf_Half        e_shunm;            //Number of section headers
+    Elf_Half        e_shnum;            //Number of section headers
     Elf_Half        e_shstrndx;         //Section header string table index
     elf64_header() = default;
     elf64_header(const char * elf_buffer);
@@ -157,4 +157,30 @@ Name	        Type	            Attributes
 .text	        SHT_PROGBITS	    SHF_ALLOC+SHF_EXECINSTR
 *
  */
+
+struct  Elf32_Phdr{
+    Elf_Word      p_type;
+    Elf_Word      p_offset;
+    Elf_Word      p_vaddr;
+    Elf_Word      p_paddr;
+    Elf_Word      p_filesz;
+    Elf_Word      p_memsz;
+    Elf_Word      p_flags;
+    Elf_Word      p_align;
+};
+
+struct  Elf64_Phdr{
+    Elf_Word      p_type;
+    Elf_Word      p_flags;
+    Elf_Sword     p_offset;
+    Elf_Sword     p_vaddr;
+    Elf_Sword     p_paddr;
+    Elf_Sword     p_filesz;
+    Elf_Sword     p_memsz;
+    Elf_Sword     p_align;
+    Elf64_Phdr(const char* elf_buffer);
+};
+//p_type
+const Elf_Word PT_LOAD = 1;
+
 #endif //RISCV_SIM_ELF_H
