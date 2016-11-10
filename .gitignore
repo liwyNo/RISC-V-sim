@@ -1,2 +1,7 @@
 .idea/*
 .idea*
+CMakeCache*
+CMakeFile*
+riscv-sim
+test
+1.txt

@@ -1,3 +1,0 @@
-/home/willsnew/桌面/RISC-V-sim/CMakeFiles/rebuild_cache.dir
-/home/willsnew/桌面/RISC-V-sim/CMakeFiles/edit_cache.dir
-/home/willsnew/桌面/RISC-V-sim/CMakeFiles/riscv_sim.dir
