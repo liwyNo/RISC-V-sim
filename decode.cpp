@@ -4,6 +4,7 @@
 #include <map>
 #include <cstring>
 #include <iostream>
+#include <iomanip>
 #include "register.h"
 #include "vmm.h"
 
@@ -177,13 +178,13 @@ void R_TYPE_funct3_2(string instruction) {
 		case 000:
 			add(rs1Val, rs2Val, rdInt);
 			break;
-		case 001:
+		case 1:
 			sll(rs1Val, rs2Val, rdInt);
 			break;
-		case 010:
+		case 10:
 			slt(rs1Val, rs2Val, rdInt);
 			break;
-		case 011:
+		case 11:
 			sltu(rs1Val, rs2Val, rdInt);
 			break;
 		case 100:
@@ -240,13 +241,13 @@ void R_TYPE_funct3_4(string instruction) {
 
 	string funct3 = instruction.substr(17, 3);
 	switch(atoi(funct3.c_str())) {
-		case 000:
+		case 0:
 			addw(rs1Val, rs2Val, rdInt);
 			break;
 		case 101:
 			srlw(rs1Val, rs2Val, rdInt);
 			break;
-		case 001:
+		case 1:
 			sllw(rs1Val, rs2Val, rdInt);
 			break;
 		default:
@@ -259,13 +260,13 @@ void R_TYPE_funct3_4(string instruction) {
 void R_TYPE_funct7_1(string instruction) {
 	string funct7 = instruction.substr(0, 7);
 	switch(atoi(funct7.c_str())) {
-		case 0100000:
+		case 100000:
 			R_TYPE_funct3_1(instruction);
 			break;
 		case 0000000:
 			R_TYPE_funct3_2(instruction);
 			break;
-		case 0000001:
+		case 1:
             void M_TYPE_funct3_1(string instruction);
 			M_TYPE_funct3_1(instruction);
 			break;
@@ -279,13 +280,13 @@ void R_TYPE_funct7_1(string instruction) {
 void R_TYPE_funct7_2(string instruction) {
 	string funct7 = instruction.substr(0, 7);
 	switch(atoi(funct7.c_str())) {
-		case 0100000:
+		case 100000:
 			R_TYPE_funct3_3(instruction);
 			break;
 		case 0000000:
 			R_TYPE_funct3_4(instruction);
 			break;
-		case 0000001:
+		case 1:
             void M_TYPE_funct3_2(string instruction);
 			M_TYPE_funct3_2(instruction);
 		default:
@@ -298,10 +299,10 @@ void R_TYPE_funct7_2(string instruction) {
 void R_TYPE_opcode(string instruction) {
 	string opcode = instruction.substr(25, 7);
 	switch(atoi(opcode.c_str())) {
-		case 0110011:
+		case 110011:
 			R_TYPE_funct7_1(instruction);
 			break;
-		case 0111011:
+		case 111011:
 			R_TYPE_funct7_2(instruction);
 			break;
 		default:
@@ -482,9 +483,15 @@ void jalr(string instruction) {
 	int rdInt = (content >> 7) & 31;
 	LL immediateNum = content >> 20;
 
+	cout << "immediateNum: " << hex << immediateNum << endl;
+	cout << "rs1Int: " << rs1Int << endl;
+	cout << "rdInt: " << rdInt << endl;
+
+
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
 	reg->setIntRegVal((ULL)(reg->getPC() + 4), rdInt);
-	reg->setPC((ULL)(rs1Val + immediateNum));
+	canjump = true;
+	reg->setPC((ULL) (((rs1Val + immediateNum) >> 1) << 1) );
 }
 void addiw(string instruction) {
 	int immediateNum = content >> 20;
@@ -531,28 +538,28 @@ void I_TYPE_funct3_1(string instruction) {
 	string funct3 = instruction.substr(17, 3);
 
 	switch(atoi(funct3.c_str())) {
-		case 001:
+		case 1:
 			slli(instruction);
 			break;
 		case 101: {
             string funct7 = instruction.substr(0, 7);
             switch (atoi(funct7.c_str())) {
-                case 0000000:
+                case 0:
                     srli(instruction);
                     break;
-                case 0100000:
+                case 100000:
                     srai(instruction);
                     break;
             }
         }
 			break;
-		case 000:
+		case 0:
 			addi(instruction);
 			break;
-		case 010:
+		case 10:
 			slti(instruction);
 			break;
-		case 011:
+		case 11:
 			sltiu(instruction);
 			break;
 		case 100:
@@ -578,10 +585,10 @@ void I_TYPE_funct3_2(string instruction) {
 		case 000:
 			lb(instruction);
 			break;
-		case 001:
+		case 1:
 			lh(instruction);
 			break;
-		case 010:
+		case 10:
 			lw(instruction);
 			break;
 		case 100:
@@ -593,7 +600,7 @@ void I_TYPE_funct3_2(string instruction) {
 		case 110:
 			lwu(instruction);
 			break;
-		case 011:
+		case 11:
 			ld(instruction);
 			break;
 		default:
@@ -606,19 +613,19 @@ void I_TYPE_funct3_2(string instruction) {
 void I_TYPE_funct3_3(string instruction) {
 	string funct3 = instruction.substr(17, 3);
 	switch(atoi(funct3.c_str())) {
-		case 000:
+		case 0:
 			addiw(instruction);
 			break;
-		case 001:
+		case 1:
 			slliw(instruction);
 			break;
 		case 101: {
             string funct7 = instruction.substr(0, 7);
             switch (atoi(funct7.c_str())) {
-                case 0000000:
+                case 0:
                     srliw(instruction);
                     break;
-                case 0100000:
+                case 100000:
                     sraiw(instruction);
                     break;
             }
@@ -634,13 +641,13 @@ void I_TYPE_funct3_3(string instruction) {
 void I_TYPE_opcode(string instruction) {
 	string opcode = instruction.substr(25, 7);
 	switch(atoi(opcode.c_str())) {
-		case 0010011:
+		case 10011:
 			I_TYPE_funct3_1(instruction);
 			break;
-		case 0000011:
+		case 11:
 			I_TYPE_funct3_2(instruction);
 			break;
-		case 0011011:
+		case 11011:
 			I_TYPE_funct3_3(instruction);
 			break;
 		case 1100111:
@@ -722,16 +729,16 @@ void sd(string instruction) {
 void S_TYPE_funct3(string instruction) {
 	string funct3 = instruction.substr(17, 3);
 	switch(atoi(funct3.c_str())) {
-		case 000:
+		case 0:
 			sb(instruction);
 			break;
-		case 001:
+		case 1:
 			sh(instruction);
 			break;
-		case 010:
+		case 10:
 			sw(instruction);
 			break;
-		case 011:
+		case 11:
 			sd(instruction);
 			break;
 		default:
@@ -829,8 +836,8 @@ void bltu(string instruction) {
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
-		immediateNum = (immediateNum << 19) >> 19;
+		LL immediateNum = (LL)(immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
 		reg->changePC(immediateNum);
@@ -856,10 +863,10 @@ void bgeu(string instruction) {
 void SB_TYPE_funct3(string instruction) {
 	string funct3 = instruction.substr(17, 3);
 	switch(atoi(funct3.c_str())) {
-		case 000:
+		case 0:
 			beq(instruction);
 			break;
-		case 001:
+		case 1:
 			bne(instruction);
 			break;
 		case 100:
@@ -901,16 +908,21 @@ void auipc(string instruction) {
 	int rdInt = (content >> 7) & 31;
 	LL immediateNum = (LL)( (content >> 12) << 12 );	//The 32-bit result is sign-extended to 64 bits.
 
+	cout << "immediateNum: " << hex << immediateNum << endl;
+	cout << "rdInt: " << rdInt << endl;
+
 	ULL rdVal = reg->getPC() + (ULL)immediateNum;
+	cout << "rdVal: " << rdVal << endl;
 	reg->setIntRegVal(rdVal, rdInt);
 }
 void U_TYPE_opcode(string instruction) {
 	string opcode = instruction.substr(25, 7);
+	cout << atoi(opcode.c_str()) << endl;
 	switch(atoi(opcode.c_str())) {
-		case 0110111:
+		case 110111:
 			lui(instruction);
 			break;
-		case 0010111:
+		case 10111:
 			auipc(instruction);
 			break;
 		default:
@@ -978,7 +990,7 @@ void E_INS(string instruction) {
 void SYS_INSTRUCTION(string instruction) {
 	string funct3 = instruction.substr(17, 3);
 	switch(atoi(funct3.c_str())) {
-		case 000:
+		case 0:
 			E_INS(instruction);
 			break;
 		default:
@@ -1259,16 +1271,16 @@ void M_TYPE_funct3_1(string instruction) {
 
 	string funct3 = instruction.substr(17, 3);
 	switch(atoi(funct3.c_str())) {
-		case 000:
+		case 0:
 			MUL((LL)rs1Val, (LL)rs2Val, rdInt);
 			break;
-		case 001:
+		case 1:
 			MULH((LL)rs1Val, (LL)rs2Val, rdInt);
 			break;
-		case 010:
+		case 10:
 			MULHSU((LL)rs1Val, rs2Val, rdInt);
 			break;
-		case 011:
+		case 11:
 			MULHU(rs1Val, rs2Val, rdInt);
 			break;
 		case 100:
@@ -1304,7 +1316,7 @@ void M_TYPE_funct3_2(string instruction) {
 	string funct3 = instruction.substr(17, 3);
 	int tempInt = atoi(funct3.c_str());
 	switch(tempInt) {
-		case 000:
+		case 0:
 			MULW((LL)rs1Val, (LL)rs2Val, rdInt);
 			break;
 		case 100:
@@ -1374,16 +1386,25 @@ void decode(ULL startAddr) {
 	while(true) {
 		memset(tempChar, 0, sizeof(tempChar));
 
+		cout << "PC: " << reg->getPC() << endl;
+		cout << "PC: hex " << std::hex << reg->getPC() << endl;
 		content = memory[reg->getPC()];
+		printf("%02x\n",content);
 		for(int i = 0; i < 32; ++i)
-            tempChar[i] = (content & (1 << i)) == 0 ? '0' : '1';
+            tempChar[31 - i] = (content & (1 << i)) == 0 ? '0' : '1';
         tempChar[32] = 0;
 		string instruction(tempChar);
+
+		std::cout << instruction << endl;
 		getOpcode(instruction);
 
 		if(canjump)
 			canjump = false;
 		else
 			reg->changePC(4);
+		{
+			int m;
+			cin >> m;
+		}
 	}
 }

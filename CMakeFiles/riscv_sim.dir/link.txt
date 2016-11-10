@@ -1,0 +1,1 @@
+/usr/bin/c++    -std=c++11   CMakeFiles/riscv_sim.dir/main.cpp.o CMakeFiles/riscv_sim.dir/elf.cpp.o CMakeFiles/riscv_sim.dir/decode.cpp.o CMakeFiles/riscv_sim.dir/vmm.cpp.o  -o riscv_sim 
