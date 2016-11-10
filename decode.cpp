@@ -17,7 +17,7 @@ int content;	//the integer value of one instruction
 bool canjump = false;
 void memoryWrite(ULL offset, ULL value, unsigned char bit){
     ULL ori = memory[offset];
-    ULL mask = (1ULL << (bit * 8)) - 1;
+    ULL mask = bit == 8 ? ~0ULL : ((1ULL << (bit * 8)) - 1);
     ori = (ori & ~mask) | (value & mask);
     memory[offset] = ori;
 }
@@ -720,8 +720,8 @@ void sd(string instruction) {
 	LL immediateHigherPart = (LL)((content >> 25) & 127) << 5;
 	LL immediateNum = ((immediateHigherPart + immediateLowerPart) << 52) >> 52;	//get the immediate number and get sign-extended
 
-	ULL rs1Val = (LL)reg->getIntRegVal(rs1Int);
-	ULL memoryAddr = immediateNum + rs1Val;
+	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
+	LL memoryAddr = immediateNum + rs1Val;
 	ULL rs2Val = reg->getIntRegVal(rs2Int);
 
 	memoryWrite(memoryAddr, rs2Val, 8);
@@ -768,7 +768,7 @@ void beq(string instruction) {
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		LL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
 		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
@@ -785,7 +785,7 @@ void bne(string instruction) {
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		LL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
 		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
@@ -802,7 +802,7 @@ void blt(string instruction) {
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		LL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
 		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
@@ -819,7 +819,7 @@ void bge(string instruction) {
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		LL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
 		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
@@ -853,7 +853,7 @@ void bgeu(string instruction) {
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		LL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
 		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
