@@ -1404,7 +1404,7 @@ void decode(ULL startAddr) {
 			reg->changePC(4);
 		{
 			int m;
-			//cin >> m;
+			cin >> m;
 		}
 	}
 }
