@@ -999,253 +999,253 @@ End of decoding system instructions
 This part finishes the decode part of M-TYPE and lists aLL the M-TYPE instructions
  */
 void MUL(LL rs1Val, LL rs2Val, int rdInt) {
-	LL rdVal;
-	__asm
-	{
-		pushq %rax
-		pushq %rdx
-		movq rs1Val, %rax
-		imulq rs2Val
-		movq %rax, rdVal
-		popq %rdx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    imulq rs2Val
+//    movq %rax, rdVal
+//    popq %rdx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void MULH(LL rs1Val, LL rs2Val, int rdInt) {
-	LL rdVal;
-	__asm
-	{
-		pushq %rax
-		pushq %rdx
-		movq rs1Val, %rax
-		imulq rs2Val
-		movq %rdx, rdVal
-		popq %rdx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    imulq rs2Val
+//    movq %rdx, rdVal
+//    popq %rdx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void MULHSU(LL rs1Val, ULL rs2Val, int rdInt) {
-	LL rdVal;
-	__asm
-	{
-		pushq %rax
-		pushq %rdx
-		movq rs1Val, %rax
-		imulq rs2Val
-		movq %rdx, rdVal
-		popq %rdx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//        LL rdVal;
+//        __asm
+//        {
+//        pushq %rax
+//        pushq %rdx
+//        movq rs1Val, %rax
+//        imulq rs2Val
+//        movq %rdx, rdVal
+//        popq %rdx
+//        popq %rax
+//        }
+//        reg->setIntRegVal(rdVal, rdInt);
 }
 void MULHU(ULL rs1Val, ULL rs2Val, int rdInt) {
-	LL rdVal;
-	__asm
-	{
-		pushq %rax
-		pushq %rdx
-		movq rs1Val, %rax
-		mulq rs2Val
-		movq %rdx, rdVal
-		popq %rdx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    mulq rs2Val
+//    movq %rdx, rdVal
+//    popq %rdx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void DIV(LL rs1Val, LL rs2Val, int rdInt) {
-	LL rdVal;
-	if(rs2Val == 0)
-	{
-		reg->setIntRegVal(-1,rdInt);
-		return;
-	}
-	if((rs1Val ^ 0x8000000000000000 == 0) && (rs2Val == -1))
-	{
-		reg->setIntRegVal(rs1Val, rdInt);
-		return;
-	}
-	__asm
-	{
-		pushq %rax
-		pushq %rdx
-		movq rs1Val, %rax
-		idivq rs2Val
-		movq %rax, rdVal
-		popq %rdx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    if(rs2Val == 0)
+//    {
+//        reg->setIntRegVal(-1,rdInt);
+//        return;
+//    }
+//    if((rs1Val ^ 0x8000000000000000 == 0) && (rs2Val == -1))
+//    {
+//        reg->setIntRegVal(rs1Val, rdInt);
+//        return;
+//    }
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    idivq rs2Val
+//    movq %rax, rdVal
+//    popq %rdx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void DIVU(ULL rs1Val, ULL rs2Val, int rdInt) {
-	LL rdVal;
-	if(rs2Val == 0)
-	{
-		reg->setIntRegVal(0x7fffffffffffffff,rdInt);
-		return;
-	}
-	__asm
-	{
-		pushq %rax
-		pushq %rdx
-		movq rs1Val, %rax
-		divq rs2Val
-		movq %rax, rdVal
-		popq %rdx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    if(rs2Val == 0)
+//    {
+//        reg->setIntRegVal(0x7fffffffffffffff,rdInt);
+//        return;
+//    }
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    divq rs2Val
+//    movq %rax, rdVal
+//    popq %rdx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void REM(LL rs1Val, LL rs2Val, int rdInt) {
-	LL rdVal;
-	if(rs2Val == 0)
-	{
-		reg->setIntRegVal(rs1Val,rdInt);
-		return;
-	}
-	if((rs1Val ^ 0x8000000000000000 == 0) && (rs2Val == -1))
-	{
-		reg->setIntRegVal(0, rdInt);
-		return;
-	}
-	__asm
-	{
-		pushq %rax
-		pushq %rdx
-		movq rs1Val, %rax
-		idivq rs2Val
-		movq %rdx, rdVal
-		popq %rdx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    if(rs2Val == 0)
+//    {
+//        reg->setIntRegVal(rs1Val,rdInt);
+//        return;
+//    }
+//    if((rs1Val ^ 0x8000000000000000 == 0) && (rs2Val == -1))
+//    {
+//        reg->setIntRegVal(0, rdInt);
+//        return;
+//    }
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    idivq rs2Val
+//    movq %rdx, rdVal
+//    popq %rdx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void REMU(ULL rs1Val, ULL rs2Val, int rdInt) {
-	LL rdVal;
-	if(rs2Val == 0)
-	{
-		reg->setIntRegVal(rs1Val,rdInt);
-		return;
-	}
-	__asm
-	{
-		pushq %rax
-		pushq %rdx
-		movq rs1Val, %rax
-		divq rs2Val
-		movq %rdx, rdVal
-		popq %rdx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    if(rs2Val == 0)
+//    {
+//        reg->setIntRegVal(rs1Val,rdInt);
+//        return;
+//    }
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    divq rs2Val
+//    movq %rdx, rdVal
+//    popq %rdx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void MULW(LL rs1Val, LL rs2Val, int rdInt) {
-	LL rdVal;
-	__asm
-	{
-		pushq %rax
-		pushq %rbx
-		pushq %rdx
-		movq rs1Val, %rax
-		movq rs2Val, %rbx
-		imull %ebx, %eax
-		movq %rax, rdVal
-		popq %rdx
-		popq %rbx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rbx
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    movq rs2Val, %rbx
+//    imull %ebx, %eax
+//    movq %rax, rdVal
+//    popq %rdx
+//    popq %rbx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void DIVW(LL rs1Val, LL rs2Val, int rdInt) {
-	LL rdVal;
-	if(rs2Val == 0)
-	{
-		reg->setIntRegVal(-1,rdInt);
-		return;
-	}
-	__asm
-	{
-		pushq %rax
-		pushq %rbx
-		pushq %rdx
-		movq rs1Val, %rax
-		movq rs2Val, %rbx
-		idivl %ebx, %eax
-		movq %rax, rdVal
-		popq %rdx
-		popq %rbx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    if(rs2Val == 0)
+//    {
+//        reg->setIntRegVal(-1,rdInt);
+//        return;
+//    }
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rbx
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    movq rs2Val, %rbx
+//    idivl %ebx, %eax
+//    movq %rax, rdVal
+//    popq %rdx
+//    popq %rbx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void DIVUW(ULL rs1Val, ULL rs2Val, int rdInt)
 {
-	LL rdVal;
-	if(rs2Val == 0)
-	{
-		reg->setIntRegVal(0x7fffffffffffffff,rdInt);
-		return;
-	}
-	__asm
-	{
-		pushq %rax
-		pushq %rbx
-		pushq %rdx
-		movq rs1Val, %rax
-		movq rs2Val, %rbx
-		divl %ebx, %eax
-		movq %rax, rdVal
-		popq %rdx
-		popq %rbx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    if(rs2Val == 0)
+//    {
+//        reg->setIntRegVal(0x7fffffffffffffff,rdInt);
+//        return;
+//    }
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rbx
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    movq rs2Val, %rbx
+//    divl %ebx, %eax
+//    movq %rax, rdVal
+//    popq %rdx
+//    popq %rbx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void REMW(LL rs1Val, LL rs2Val, int rdInt) {
-	LL rdVal;
-	if(rs2Val == 0)
-	{
-		reg->setIntRegVal((int)rs1Val,rdInt);
-		return;
-	}
-	__asm
-	{
-		pushq %rax
-		pushq %rbx
-		pushq %rdx
-		movq rs1Val, %rax
-		movq rs2Val, %rbx
-		idivl %ebx, %eax
-		movq %rdx, rdVal
-		popq %rdx
-		popq %rbx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    if(rs2Val == 0)
+//    {
+//        reg->setIntRegVal((int)rs1Val,rdInt);
+//        return;
+//    }
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rbx
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    movq rs2Val, %rbx
+//    idivl %ebx, %eax
+//    movq %rdx, rdVal
+//    popq %rdx
+//    popq %rbx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void REMUW(ULL rs1Val, ULL rs2Val, int rdInt)
 {
-	LL rdVal;
-	if(rs2Val == 0)
-	{
-		reg->setIntRegVal((unsigned int)rs1Val,rdInt);
-		return;
-	}
-	__asm
-	{
-		pushq %rax
-		pushq %rbx
-		pushq %rdx
-		movq rs1Val, %rax
-		movq rs2Val, %rbx
-		divl %ebx, %eax
-		movq %rdx, rdVal
-		popq %rdx
-		popq %rbx
-		popq %rax
-	}
-	reg->setIntRegVal(rdVal, rdInt);
+//    LL rdVal;
+//    if(rs2Val == 0)
+//    {
+//        reg->setIntRegVal((unsigned int)rs1Val,rdInt);
+//        return;
+//    }
+//    __asm
+//    {
+//    pushq %rax
+//    pushq %rbx
+//    pushq %rdx
+//    movq rs1Val, %rax
+//    movq rs2Val, %rbx
+//    divl %ebx, %eax
+//    movq %rdx, rdVal
+//    popq %rdx
+//    popq %rbx
+//    popq %rax
+//    }
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 void M_TYPE_funct3_1(string instruction) {
 	//aLL M-TYPE instructions have the same part
@@ -1367,14 +1367,17 @@ void getOpcode(string instruction) {
 	}
 }
 void decode(ULL startAddr) {
+    reg = new RegisterFile;
 	Initialize(startAddr);		//Initialize some variables and prepare for the decode part
 
-	char tempChar[4];
+	char tempChar[33];
 	while(true) {
 		memset(tempChar, 0, sizeof(tempChar));
 
 		content = memory[reg->getPC()];
-		memcpy((void *)tempChar, (void *)(&content), 4);
+		for(int i = 0; i < 32; ++i)
+            tempChar[i] = (content & (1 << i)) == 0 ? '0' : '1';
+        tempChar[32] = 0;
 		string instruction(tempChar);
 		getOpcode(instruction);
 

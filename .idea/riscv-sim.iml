@@ -3,10 +3,14 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/debug.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/decode.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/vmm.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/main.cpp" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/elf.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/register.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/vmm.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/elf.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/CMakeLists.txt" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/elf.h" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">

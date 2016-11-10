@@ -166,5 +166,7 @@ int main(int argc, char ** argv){
 
     delete elf_buffer;
 
+    void decode(unsigned long long startAddr);
+    decode(entry);
     return 0;
 }

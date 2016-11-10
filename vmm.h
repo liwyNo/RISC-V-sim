@@ -94,8 +94,4 @@ struct block{
     }
 };
 
-block VM::operator[](unsigned long long offset) {
-    return block(offset, this);
-}
-
 #endif //RISCV_SIM_VMM_H
