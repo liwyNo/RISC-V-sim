@@ -17,7 +17,7 @@ int content;	//the integer value of one instruction
 bool canjump = false;
 void memoryWrite(ULL offset, ULL value, unsigned char bit){
     ULL ori = memory[offset];
-    ULL mask = (1ULL << (bit * 8)) - 1;
+    ULL mask = bit == 8 ? ~0ULL : ((1ULL << (bit * 8)) - 1);
     ori = (ori & ~mask) | (value & mask);
     memory[offset] = ori;
 }
@@ -434,6 +434,7 @@ void lw(string instruction) {
 	LL immediateNum = (LL)content >> 20;
 
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
+	
 	LL loadData = (LL)memory[(ULL)(immediateNum + rs1Val)];
 	loadData = (loadData << 32) >> 32;
 	reg->setIntRegVal((ULL)loadData, rdInt);
@@ -445,6 +446,7 @@ void ld(string instruction) {
 
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
 	LL loadData = (LL)memory[(ULL)(immediateNum + rs1Val)];
+
 	reg->setIntRegVal((ULL)loadData, rdInt);
 }
 void lbu(string instruction) {
@@ -482,11 +484,6 @@ void jalr(string instruction) {
 	int rs1Int = (content >> 15) & 31;
 	int rdInt = (content >> 7) & 31;
 	LL immediateNum = content >> 20;
-
-	cout << "immediateNum: " << hex << immediateNum << endl;
-	cout << "rs1Int: " << rs1Int << endl;
-	cout << "rdInt: " << rdInt << endl;
-
 
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
 	reg->setIntRegVal((ULL)(reg->getPC() + 4), rdInt);
@@ -705,6 +702,7 @@ void sw(string instruction) {
 	LL immediateHigherPart = (LL)((content >> 25) & 127) << 5;
 	LL immediateNum = ((immediateHigherPart + immediateLowerPart) << 52) >> 52;	//get the immediate number and get sign-extended
 
+
 	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
 	LL memoryAddr = immediateNum + rs1Val;
 	ULL rs2Val = reg->getIntRegVal(rs2Int);
@@ -720,8 +718,8 @@ void sd(string instruction) {
 	LL immediateHigherPart = (LL)((content >> 25) & 127) << 5;
 	LL immediateNum = ((immediateHigherPart + immediateLowerPart) << 52) >> 52;	//get the immediate number and get sign-extended
 
-	ULL rs1Val = (LL)reg->getIntRegVal(rs1Int);
-	ULL memoryAddr = immediateNum + rs1Val;
+	LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
+	LL memoryAddr = immediateNum + rs1Val;
 	ULL rs2Val = reg->getIntRegVal(rs2Int);
 
 	memoryWrite(memoryAddr, rs2Val, 8);
@@ -768,7 +766,7 @@ void beq(string instruction) {
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		LL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
 		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
@@ -785,7 +783,7 @@ void bne(string instruction) {
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		LL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
 		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
@@ -802,7 +800,7 @@ void blt(string instruction) {
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		LL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
 		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
@@ -814,12 +812,12 @@ void bge(string instruction) {
 	int rs2Int = (content >> 20) & 31;
 	ULL rs1Val = reg->getIntRegVal(rs1Int);
 	ULL rs2Val = reg->getIntRegVal(rs2Int);
-	if ( (LL)rs1Val < (LL)rs2Val) {
+	if ( (LL)rs1Val >= (LL)rs2Val) {
 		ULL immediateNum_1 = ((content >> 31) & 1) << 11;
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		LL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
 		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
@@ -848,12 +846,12 @@ void bgeu(string instruction) {
 	int rs2Int = (content >> 20) & 31;
 	ULL rs1Val = reg->getIntRegVal(rs1Int);
 	ULL rs2Val = reg->getIntRegVal(rs2Int);
-	if (rs1Val > rs2Val) {
+	if (rs1Val >= rs2Val) {
 		ULL immediateNum_1 = ((content >> 31) & 1) << 11;
 		ULL immediateNum_2 = ((content >> 7) & 1) << 10;
 		ULL immediateNum_3 = ((content >> 25) & 63) << 4;
 		ULL immediateNum_4 = ((content >> 8) & 15);
-		ULL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
+		LL immediateNum = (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4) << 1;
 		immediateNum = (immediateNum << 51) >> 51;
 
 		canjump = true;
@@ -908,16 +906,11 @@ void auipc(string instruction) {
 	int rdInt = (content >> 7) & 31;
 	LL immediateNum = (LL)( (content >> 12) << 12 );	//The 32-bit result is sign-extended to 64 bits.
 
-	cout << "immediateNum: " << hex << immediateNum << endl;
-	cout << "rdInt: " << rdInt << endl;
-
 	ULL rdVal = reg->getPC() + (ULL)immediateNum;
-	cout << "rdVal: " << rdVal << endl;
 	reg->setIntRegVal(rdVal, rdInt);
 }
 void U_TYPE_opcode(string instruction) {
 	string opcode = instruction.substr(25, 7);
-	cout << atoi(opcode.c_str()) << endl;
 	switch(atoi(opcode.c_str())) {
 		case 110111:
 			lui(instruction);
@@ -969,7 +962,7 @@ This part parses some system instructions
 void ecall() {
     //make it can compile first.
 #define systemCall
-	LL sys_call_num = reg->getIntRegVal(7);
+	LL sys_call_num = reg.getIntRegVal(7);
 	systemCall((int)sys_call_num);
 }
 void ebreak() {
@@ -1011,276 +1004,260 @@ End of decoding system instructions
 This part finishes the decode part of M-TYPE and lists aLL the M-TYPE instructions
  */
 void MUL(LL rs1Val, LL rs2Val, int rdInt) {
-//    LL rdVal;
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    imulq rs2Val
-//    movq %rax, rdVal
-//    popq %rdx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	LL rdVal;
+	__asm__ __volatile__
+	(
+		"pushq %%rax\n\t"
+		"pushq %%rdx\n\t"
+		"movq %1, %%rax\n\t"
+		"imulq %2\n\t"
+		"movq %%rax, %0\n\t"
+		"popq %%rdx\n\t"
+		"popq %%rax\n\t"
+		:"=m"(rdVal)
+		:"r"(rs1Val),"r"(rs2Val)
+	);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void MULH(LL rs1Val, LL rs2Val, int rdInt) {
-//    LL rdVal;
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    imulq rs2Val
-//    movq %rdx, rdVal
-//    popq %rdx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	LL rdVal;
+	__asm__ __volatile__
+	(
+		"pushq %%rax\n\t"
+		"pushq %%rdx\n\t"
+		"movq %1, %%rax\n\t"
+		"imulq %2\n\t"
+		"movq %%rdx, %0\n\t"
+		"popq %%rdx\n\t"
+		"popq %%rax\n\t"
+		:"=m"(rdVal)
+		:"r"(rs1Val),"r"(rs2Val)
+	);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void MULHSU(LL rs1Val, ULL rs2Val, int rdInt) {
-//        LL rdVal;
-//        __asm
-//        {
-//        pushq %rax
-//        pushq %rdx
-//        movq rs1Val, %rax
-//        imulq rs2Val
-//        movq %rdx, rdVal
-//        popq %rdx
-//        popq %rax
-//        }
-//        reg->setIntRegVal(rdVal, rdInt);
+	LL rdVal;
+	__asm__ __volatile__
+	(
+		"pushq %%rax\n\t"
+		"pushq %%rdx\n\t"
+		"movq %1, %%rax\n\t"
+		"imulq %2\n\t"
+		"movq %%rax, %0\n\t"
+		"popq %%rdx\n\t"
+		"popq %%rax\n\t"
+		:"=m"(rdVal)
+		:"r"(rs1Val),"r"(rs2Val)
+	);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void MULHU(ULL rs1Val, ULL rs2Val, int rdInt) {
-//    LL rdVal;
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    mulq rs2Val
-//    movq %rdx, rdVal
-//    popq %rdx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	ULL rdVal;
+	__asm__ __volatile__
+	(
+		"pushq %%rax\n\t"
+		"pushq %%rdx\n\t"
+		"movq %1, %%rax\n\t"
+		"mulq %2\n\t"
+		"movq %%rdx, %0\n\t"
+		"popq %%rdx\n\t"
+		"popq %%rax\n\t"
+		:"=m"(rdVal)
+		:"r"(rs1Val),"r"(rs2Val)
+	);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void DIV(LL rs1Val, LL rs2Val, int rdInt) {
-//    LL rdVal;
-//    if(rs2Val == 0)
-//    {
-//        reg->setIntRegVal(-1,rdInt);
-//        return;
-//    }
-//    if((rs1Val ^ 0x8000000000000000 == 0) && (rs2Val == -1))
-//    {
-//        reg->setIntRegVal(rs1Val, rdInt);
-//        return;
-//    }
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    idivq rs2Val
-//    movq %rax, rdVal
-//    popq %rdx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	LL rdVal;
+	if(rs2Val == 0)
+	{
+		reg.setIntRegVal(-1,rdInt);
+		return;
+	}
+	if((rs1Val ^ 0x8000000000000000 == 0) && (rs2Val == -1))
+	{
+		reg.setIntRegVal(rs1Val, rdInt);
+		return;
+	}
+	__asm__ __volatile__
+	(
+		"pushq %%rax\n\t"
+		"pushq %%rdx\n\t"
+		"movq %1, %%rdx\n\t"
+		"sarq $63, %%rdx\n\t"
+		"idivq %2\n\t"
+		"movq %%rax, %0\n\t"
+		"popq %%rdx\n\t"
+		"popq %%rax\n\t"
+		:"=m"(rdVal)
+		:"r"(rs1Val),"m"(rs2Val)
+	);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void DIVU(ULL rs1Val, ULL rs2Val, int rdInt) {
-//    LL rdVal;
-//    if(rs2Val == 0)
-//    {
-//        reg->setIntRegVal(0x7fffffffffffffff,rdInt);
-//        return;
-//    }
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    divq rs2Val
-//    movq %rax, rdVal
-//    popq %rdx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	ULL rdVal;
+	if(rs2Val == 0)
+	{
+		reg.setIntRegVal(0x7fffffffffffffff,rdInt);
+		return;
+	}
+	__asm__ __volatile__
+	(
+		"pushq %%rax\n\t"
+		"pushq %%rdx\n\t"
+		"movq %1, %%rdx\n\t"
+		"shrq $63, %%rdx\n\t"
+		"divq %2\n\t"
+		"movq %%rax, %0\n\t"
+		"popq %%rdx\n\t"
+		"popq %%rax\n\t"
+		:"=m"(rdVal)
+		:"r"(rs1Val),"m"(rs2Val)
+	);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void REM(LL rs1Val, LL rs2Val, int rdInt) {
-//    LL rdVal;
-//    if(rs2Val == 0)
-//    {
-//        reg->setIntRegVal(rs1Val,rdInt);
-//        return;
-//    }
-//    if((rs1Val ^ 0x8000000000000000 == 0) && (rs2Val == -1))
-//    {
-//        reg->setIntRegVal(0, rdInt);
-//        return;
-//    }
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    idivq rs2Val
-//    movq %rdx, rdVal
-//    popq %rdx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	LL rdVal;
+	if(rs2Val == 0)
+	{
+		reg.setIntRegVal(rs1Val,rdInt);
+		return;
+	}
+	if((rs1Val ^ 0x8000000000000000 == 0) && (rs2Val == -1))
+	{
+		reg.setIntRegVal(0, rdInt);
+		return;
+	}
+	__asm__ __volatile__
+	(
+		"pushq %%rax\n\t"
+		"pushq %%rdx\n\t"
+		"movq %1, %%rdx\n\t"
+		"sarq $63, %%rdx\n\t"
+		"idivq %2\n\t"
+		"movq %%rdx, %0\n\t"
+		"popq %%rdx\n\t"
+		"popq %%rax\n\t"
+		:"=m"(rdVal)
+		:"r"(rs1Val),"m"(rs2Val)
+	);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void REMU(ULL rs1Val, ULL rs2Val, int rdInt) {
-//    LL rdVal;
-//    if(rs2Val == 0)
-//    {
-//        reg->setIntRegVal(rs1Val,rdInt);
-//        return;
-//    }
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    divq rs2Val
-//    movq %rdx, rdVal
-//    popq %rdx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	ULL rdVal;
+	if(rs2Val == 0)
+	{
+		reg.setIntRegVal(rs1Val,rdInt);
+		return;
+	}
+	__asm__ __volatile__
+	(
+		"pushq %%rax\n\t"
+		"pushq %%rdx\n\t"
+		"movq %1, %%rdx\n\t"
+		"shrq $63, %%rdx\n\t"
+		"divq %2\n\t"
+		"movq %%rdx, %0\n\t"
+		"popq %%rdx\n\t"
+		"popq %%rax\n\t"
+		:"=m"(rdVal)
+		:"r"(rs1Val),"m"(rs2Val)
+	);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void MULW(LL rs1Val, LL rs2Val, int rdInt) {
-//    LL rdVal;
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rbx
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    movq rs2Val, %rbx
-//    imull %ebx, %eax
-//    movq %rax, rdVal
-//    popq %rdx
-//    popq %rbx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	LL rdVal;
+	__asm__ __volatile__
+	(
+		"pushq %%rax\n\t"
+		"pushq %%rbx\n\t"
+		"pushq %%rdx\n\t"
+		"movq %1, %%rax\n\t"
+		"movq %2, %%rbx\n\t"
+		"imull %%ebx, %%eax\n\t"
+		"movq %%rax, %0\n\t"
+		"popq %%rdx\n\t"
+		"popq %%rbx\n\t"
+		"popq %%rax\n\t"
+		:"=m"(rdVal)
+		:"m"(rs1Val),"m"(rs2Val)
+	);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void DIVW(LL rs1Val, LL rs2Val, int rdInt) {
-//    LL rdVal;
-//    if(rs2Val == 0)
-//    {
-//        reg->setIntRegVal(-1,rdInt);
-//        return;
-//    }
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rbx
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    movq rs2Val, %rbx
-//    idivl %ebx, %eax
-//    movq %rax, rdVal
-//    popq %rdx
-//    popq %rbx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	LL rdVal;
+	if(rs2Val == 0)
+	{
+		reg.setIntRegVal(-1,rdInt);
+		return;
+	}
+	int rs1 = rs1Val;
+	int rs2 = rs2Val;
+	rdVal = (LL)(rs1/rs2);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void DIVUW(ULL rs1Val, ULL rs2Val, int rdInt)
 {
-//    LL rdVal;
-//    if(rs2Val == 0)
-//    {
-//        reg->setIntRegVal(0x7fffffffffffffff,rdInt);
-//        return;
-//    }
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rbx
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    movq rs2Val, %rbx
-//    divl %ebx, %eax
-//    movq %rax, rdVal
-//    popq %rdx
-//    popq %rbx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	ULL rdVal;
+	if(rs2Val == 0)
+	{
+		reg.setIntRegVal(0x7fffffffffffffff,rdInt);
+		return;
+	}
+	unsigned int rs1 = rs1Val;
+	unsigned int rs2 = rs2Val;
+	rdVal = (ULL)(rs1/rs2);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void REMW(LL rs1Val, LL rs2Val, int rdInt) {
-//    LL rdVal;
-//    if(rs2Val == 0)
-//    {
-//        reg->setIntRegVal((int)rs1Val,rdInt);
-//        return;
-//    }
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rbx
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    movq rs2Val, %rbx
-//    idivl %ebx, %eax
-//    movq %rdx, rdVal
-//    popq %rdx
-//    popq %rbx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	LL rdVal;
+	if(rs2Val == 0)
+	{
+		reg.setIntRegVal((int)rs1Val,rdInt);
+		return;
+	}
+	int rs1 = rs1Val;
+	int rs2 = rs2Val;
+	rdVal = (LL)(rs1%rs2);
+	reg.setIntRegVal(rdVal, rdInt);
 }
 void REMUW(ULL rs1Val, ULL rs2Val, int rdInt)
 {
-//    LL rdVal;
-//    if(rs2Val == 0)
-//    {
-//        reg->setIntRegVal((unsigned int)rs1Val,rdInt);
-//        return;
-//    }
-//    __asm
-//    {
-//    pushq %rax
-//    pushq %rbx
-//    pushq %rdx
-//    movq rs1Val, %rax
-//    movq rs2Val, %rbx
-//    divl %ebx, %eax
-//    movq %rdx, rdVal
-//    popq %rdx
-//    popq %rbx
-//    popq %rax
-//    }
-//    reg->setIntRegVal(rdVal, rdInt);
+	ULL rdVal;
+	if(rs2Val == 0)
+	{
+		reg.setIntRegVal((unsigned int)rs1Val,rdInt);
+		return;
+	}
+	unsigned int rs1 = rs1Val;
+	unsigned int rs2 = rs2Val;
+	rdVal = (ULL)(rs1/rs2);
+	reg.setIntRegVal(rdVal, rdInt);
 }
+
+
 void M_TYPE_funct3_1(string instruction) {
 	//aLL M-TYPE instructions have the same part
 	int rs1Int = (content >> 15) & 31;
 	int rs2Int = (content >> 20) & 31;
 	int rdInt = (content >> 7) & 31;
 
-	ULL rs1Val = reg->getIntRegVal(rs1Int);
-	ULL rs2Val = reg->getIntRegVal(rs2Int);
+	ULL rs1Val = reg.getIntRegVal(rs1Int);
+	ULL rs2Val = reg.getIntRegVal(rs2Int);
 	//common part ends here
 
 	string funct3 = instruction.substr(17, 3);
 	switch(atoi(funct3.c_str())) {
-		case 0:
+		case 000:
 			MUL((LL)rs1Val, (LL)rs2Val, rdInt);
 			break;
-		case 1:
+		case 001:
 			MULH((LL)rs1Val, (LL)rs2Val, rdInt);
 			break;
-		case 10:
+		case 010:
 			MULHSU((LL)rs1Val, rs2Val, rdInt);
 			break;
-		case 11:
+		case 011:
 			MULHU(rs1Val, rs2Val, rdInt);
 			break;
 		case 100:
@@ -1309,14 +1286,14 @@ void M_TYPE_funct3_2(string instruction) {
 	int rs2Int = (content >> 20) & 31;
 	int rdInt = (content >> 7) & 31;
 
-	ULL rs1Val = reg->getIntRegVal(rs1Int);
-	ULL rs2Val = reg->getIntRegVal(rs2Int);
+	ULL rs1Val = reg.getIntRegVal(rs1Int);
+	ULL rs2Val = reg.getIntRegVal(rs2Int);
 	//common part ends here
 
 	string funct3 = instruction.substr(17, 3);
 	int tempInt = atoi(funct3.c_str());
 	switch(tempInt) {
-		case 0:
+		case 000:
 			MULW((LL)rs1Val, (LL)rs2Val, rdInt);
 			break;
 		case 100:
@@ -1383,11 +1360,12 @@ void decode(ULL startAddr) {
 	Initialize(startAddr);		//Initialize some variables and prepare for the decode part
 
 	char tempChar[33];
+	bool flag = false;
 	while(true) {
 		memset(tempChar, 0, sizeof(tempChar));
 
-		cout << "PC: " << reg->getPC() << endl;
-		cout << "PC: hex " << std::hex << reg->getPC() << endl;
+		//cout << "PC: " << reg->getPC() << endl;
+		//cout << "PC: hex " << std::hex << reg->getPC() << endl;
 		content = memory[reg->getPC()];
 		printf("%02x\n",content);
 		for(int i = 0; i < 32; ++i)
@@ -1395,16 +1373,12 @@ void decode(ULL startAddr) {
         tempChar[32] = 0;
 		string instruction(tempChar);
 
-		std::cout << instruction << endl;
+		//std::cout << instruction << endl;
 		getOpcode(instruction);
 
 		if(canjump)
 			canjump = false;
 		else
 			reg->changePC(4);
-		{
-			int m;
-			cin >> m;
-		}
 	}
 }

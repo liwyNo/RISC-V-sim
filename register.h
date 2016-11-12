@@ -8,6 +8,8 @@ and use int to represent the Program Count.
 #define REGISTER_H
 
 #include <string.h>
+#include <iostream>
+using namespace std;
 
 typedef long long LL;
 typedef unsigned long long ULL;
@@ -30,7 +32,9 @@ public:
 	void changePC(ULL offset) { pc += offset; }
 	ULL getPC() { return pc; }
 
-	void setIntRegVal(ULL value, int num) { if(num) x[num] = value; }
+	void setIntRegVal(ULL value, int num) { 
+		if(num) x[num] = value;
+}
 	ULL getIntRegVal(int num) { return x[num]; }
 	
 	void setFloatRegVal(ULL value, int num) { f[num] = value; }
