@@ -18,14 +18,12 @@ int analyze_argument(int argc, char** argv) {
     int first_args = 1;
     for (; first_args < argc; ++first_args) {
         if (std::string(argv[first_args])[0] == '-') {
-            if(std::string(argv[first_args]) == "-h"){
+            if (std::string(argv[first_args]) == "-h") {
                 help();
                 exit(0);
-            }
-            else if(std::string(argv[first_args]) == "-d"){
+            } else if (std::string(argv[first_args]) == "-d") {
                 enable_debug = true;
-            }
-            else{
+            } else {
                 std::cerr << "Error: Invaild argument." << std::endl;
                 help();
                 exit(0);

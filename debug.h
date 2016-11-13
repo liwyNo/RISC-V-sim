@@ -64,9 +64,9 @@ class debuger {
     unsigned long long val;
 
     std::map<std::string, int> reg_map;
-    void map_init(){
+    void map_init() {
         char buf[5];
-        for(int i = 0; i < 32; ++i){
+        for (int i = 0; i < 32; ++i) {
             sprintf(buf, "x%d", i);
             reg_map[buf] = i;
             sprintf(buf, "f%d", i);
@@ -139,20 +139,23 @@ class debuger {
         reg_map["ft10"] = 62;
         reg_map["ft11"] = 63;
     }
-    unsigned long long getRegister(int val){
-        union{
+    unsigned long long getRegister(int val) {
+        union {
             unsigned long long dword;
             double db;
-        }value;
-        if(val >= 32)
+        } value;
+        if (val >= 32)
             value.db = reg->getFloatRegVal(val - 32);
         else
             value.dword = reg->getIntRegVal(val);
         return value.dword;
     }
+
    public:
     debuger(VM& _memory, RegisterFile* _reg)
-        : memory(_memory), reg(_reg), step(0) {map_init();}
+        : memory(_memory), reg(_reg), step(0) {
+        map_init();
+    }
     void wait() {
         if ((!step && !has_until) || judge()) {
             step = 0;
@@ -248,17 +251,16 @@ class debuger {
         val = stoull(tmp, nullptr, 16);
     }
     bool judge() {
-        union{
+        union {
             unsigned long long dword;
             double db;
-        }value;
+        } value;
         if (!has_until) return false;
         if (judge_mem)
             value.dword = memory[cnt];
         else
             value.dword = getRegister(cnt);
-        if(judge_mem || cnt < 32)
-            switch (op) {
+        if (judge_mem || cnt < 32) switch (op) {
                 case 0:  // eq
                     return value.dword == val;
                 case 1:  // less than
@@ -275,10 +277,10 @@ class debuger {
                     return false;
             }
         else {
-            union{
+            union {
                 unsigned long long dword;
                 double db;
-            }tmp;
+            } tmp;
             tmp.dword = val;
             switch (op) {
                 case 0:  // eq

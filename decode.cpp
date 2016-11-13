@@ -6,6 +6,7 @@
 #include <map>
 #include "debug.h"
 #include "register.h"
+#include "syscall.h"
 #include "vmm.h"
 
 using namespace std;
@@ -1006,10 +1007,14 @@ End UJ-TYPE decode
 This part parses some system instructions
  */
 void ecall() {
-// make it can compile first.
-#define systemCall
+    // make it can compile first.
     LL sys_call_num = reg->getIntRegVal(7);
-    systemCall((int)sys_call_num);
+    ULL a0 = reg->getIntRegVal(10);
+    ULL a1 = reg->getIntRegVal(11);
+    ULL a2 = reg->getIntRegVal(12);
+    ULL a3 = reg->getIntRegVal(13);
+    ULL rval = systemCall((int)sys_call_num, a0, a1, a2, a3);
+    reg->setIntRegVal(10, rval);
 }
 void ebreak() {}
 void E_INS(string instruction) {
