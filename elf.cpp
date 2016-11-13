@@ -3,12 +3,11 @@
 //
 
 #include "elf.h"
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cstdio>
 elf_ident::elf_ident(const char *elf_buffer) {
     memcpy(this, elf_buffer, sizeof(*this));
-
 }
 
 elf32_header::elf32_header(const char *elf_buffer) {

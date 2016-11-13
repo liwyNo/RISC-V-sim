@@ -3,6 +3,4 @@
 //
 
 #include "vmm.h"
-block VM::operator[](unsigned long long offset) {
-    return block(offset, this);
-}
+block VM::operator[](unsigned long long offset) { return block(offset, this); }
