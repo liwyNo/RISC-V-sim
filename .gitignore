@@ -1,7 +1,9 @@
 .idea/*
-.idea*
+.idea
 CMakeCache*
 CMakeFile*
-riscv-sim
+riscv_sim
 test
 1.txt
+cmake_install.cmake
+Makefile
