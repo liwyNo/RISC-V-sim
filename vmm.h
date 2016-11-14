@@ -17,7 +17,7 @@ struct VM {
     block operator[](unsigned long long offset);
     bool load(const char* src, unsigned long long des, unsigned long long len) {
         while (1) {
-            if ((des + len) >= ((des & TAG_MASK) + PAGE_SIZE)) {
+            if (((des + len) & TAG_MASK) != (des & TAG_MASK)) {
                 auto a_len = PAGE_SIZE - (des & PAGE_MASK);
                 exist(des & TAG_MASK);
                 memcpy(vm_pool[des & TAG_MASK] + (des & PAGE_MASK), src, a_len);

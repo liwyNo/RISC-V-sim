@@ -10,10 +10,8 @@ and use int to represent the Program Count.
 typedef long long LL;
 typedef unsigned long long ULL;
 
-class RegisterFile {
-   private:
+struct RegisterFile {
     ULL pc;
-    ULL hp;
     ULL x[32];
     double f[32];
 
@@ -22,15 +20,12 @@ class RegisterFile {
         memset(x, 0, sizeof(x));
         memset(f, 0, sizeof(f));
         pc = 0;
-        hp = 0x8000000000000000ULL;
         x[0] = 0;
     }
 
     void setPC(ULL value) { pc = value; }
     void changePC(ULL offset) { pc += offset; }
 
-    ULL getHP() { return hp; }
-    void changHP(ULL offset) { hp += offset; }
     ULL getPC() { return pc; }
 
     void setIntRegVal(ULL value, int num) {

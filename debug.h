@@ -57,8 +57,9 @@ class debuger {
     RegisterFile* reg;
     unsigned long long step;
 
-    bool has_until;
-    bool judge_mem;
+    bool has_until = false;
+    bool judge_mem = false;
+    bool run = false;
     unsigned long long cnt;
     unsigned char op;
     unsigned long long val;
@@ -138,13 +139,17 @@ class debuger {
         reg_map["ft9"] = 61;
         reg_map["ft10"] = 62;
         reg_map["ft11"] = 63;
+
+        reg_map["pc"] = 64;
     }
     unsigned long long getRegister(int val) {
         union {
             unsigned long long dword;
             double db;
         } value;
-        if (val >= 32)
+        if(val == 64)
+            value.dword = reg->getPC();
+        else if (val >= 32)
             value.db = reg->getFloatRegVal(val - 32);
         else
             value.dword = reg->getIntRegVal(val);
@@ -157,7 +162,9 @@ class debuger {
         map_init();
     }
     void wait() {
-        if ((!step && !has_until) || judge()) {
+        if(run)
+            return;
+        while ((!step && !has_until) || judge()) {
             step = 0;
             has_until = false;
             std::cout << ">> ";
@@ -171,17 +178,25 @@ class debuger {
                 sstep();
             else if (tmp == "u")
                 until();
+            else if(tmp == "n")
+                step = 1;
+            else if(tmp == "c") {
+                run = true;
+                return;
+            }
             else {
                 std::cerr << "Error: Debug input error." << std::endl;
                 help();
             }
         }
+        if(step != 0)
+            step--;
     }
 
    private:
     void help() {
-        std::cout << "Usage: [h/p/s/u] (arguments)" << std::endl;
-        std::cout << "\th:\t Print this message." << std::endl;
+        std::cout << "Usage: [h/p/s/u/n/c] (arguments)" << std::endl;
+        std::cout << "\th: Print this message." << std::endl;
         std::cout << "\tp (mem address / reg register): Print this value in "
                      "this memory or reigster (e.g. \"p reg s0\", \"p mem "
                      "10000\")."
@@ -190,6 +205,8 @@ class debuger {
         std::cout << "\tu (condition): Run until the condition is true. (e.g. "
                      "\"u reg pc == 10000\", \"u mem 10000 >= 10000\")"
                   << std::endl;
+        std::cout << "\tn: Single step." << std::endl;
+        std::cout << "\tc: Continue run. (disable debuger)" << std::endl;
     }
     void print() {
         std::string tmp;
@@ -204,7 +221,7 @@ class debuger {
             std::cin >> tmp;
             int value = reg_map[tmp];
             auto ans = getRegister(value);
-            std::cout << std::ios::hex << value << std::endl;
+            printf("%x\n", ans);
             std::ios::dec;
         } else {
             help();
@@ -220,16 +237,21 @@ class debuger {
         has_until = true;
         std::string tmp;
         std::cin >> tmp;
-        if (tmp == "mem")
+        if (tmp == "mem") {
             judge_mem = true;
-        else if (tmp == "reg")
+            std::cin >> tmp;
+            cnt = stoull(tmp, nullptr, 16);
+        }
+        else if (tmp == "reg") {
             judge_mem = false;
+            std::cin >> tmp;
+            cnt = reg_map[tmp];
+        }
         else {
             has_until = false;
             return;
         }
-        std::cin >> tmp;
-        cnt = stoull(tmp, nullptr, 16);
+
         std::cin >> tmp;
         if (tmp == "==")
             op = 0;

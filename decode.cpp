@@ -8,9 +8,10 @@
 #include "register.h"
 #include "syscall.h"
 #include "vmm.h"
-
+#include <deque>
 using namespace std;
 
+deque<unsigned long long> de;
 map<string, int> typeIndex;
 RegisterFile *reg;
 extern VM memory;
@@ -1008,7 +1009,7 @@ This part parses some system instructions
  */
 void ecall() {
     // make it can compile first.
-    LL sys_call_num = reg->getIntRegVal(7);
+    LL sys_call_num = reg->getIntRegVal(17);
     ULL a0 = reg->getIntRegVal(10);
     ULL a1 = reg->getIntRegVal(11);
     ULL a2 = reg->getIntRegVal(12);
@@ -1801,13 +1802,14 @@ void decode(ULL startAddr, bool enable_debug) {
         memset(tempChar, 0, sizeof(tempChar));
 
         // cout << "PC: " << reg->getPC() << endl;
-        // cout << "PC: hex " << std::hex << reg->getPC() << endl;
+        //cerr << "PC: hex " << std::hex << reg->getPC() << endl;
         content = memory[reg->getPC()];
-        printf("%02x\n", content);
+        //printf("%02x\n", content);
+        de.push_front(reg->getPC());
         for (int i = 0; i < 32; ++i)
             tempChar[31 - i] = (content & (1 << i)) == 0 ? '0' : '1';
         tempChar[32] = 0;
-        string instruction(tempChar);
+            string instruction(tempChar);
 
         // std::cout << instruction << endl;
         getOpcode(instruction);
