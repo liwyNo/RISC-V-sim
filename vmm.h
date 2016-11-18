@@ -33,6 +33,24 @@ struct VM {
         }
         return true;
     }
+    bool store(char* src, unsigned long long des, unsigned long long len) {
+        while (1) {
+            if (((des + len) & TAG_MASK) != (des & TAG_MASK)) {
+                auto a_len = PAGE_SIZE - (des & PAGE_MASK);
+                exist(des & TAG_MASK);
+                memcpy(src, vm_pool[des & TAG_MASK] + (des & PAGE_MASK), a_len);
+                src += a_len;
+                des += a_len;
+                len -= a_len;
+                continue;
+            } else {
+                exist(des & TAG_MASK);
+                memcpy(src, vm_pool[des & TAG_MASK] + (des & PAGE_MASK), len);
+                break;
+            }
+        }
+        return true;
+    }
     bool clean(unsigned long long des, unsigned long long len) {
         while (1) {
             if ((des + len) >= ((des & TAG_MASK) + PAGE_SIZE)) {

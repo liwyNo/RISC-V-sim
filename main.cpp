@@ -6,6 +6,7 @@
 #include "vmm.h"
 
 VM memory;
+unsigned long long sbrk_point;
 bool enable_debug = false;
 void help() {}
 int analyze_argument(int argc, char** argv) {
@@ -139,6 +140,7 @@ bool load_program(char* elf_buffer, VM& memory, Elf_Sword phoff, int no,
                     pheader.p_filesz);
         memory.clean(pheader.p_vaddr + pheader.p_filesz,
                      pheader.p_memsz - pheader.p_filesz);
+        sbrk_point = pheader.p_vaddr + pheader.p_memsz;
         return true;
     } else {
         std::cerr << "Error: Program type is not PT_LOAD." << std::endl;

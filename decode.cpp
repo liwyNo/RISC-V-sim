@@ -557,12 +557,12 @@ void I_TYPE_funct3_1(string instruction) {
             slli(instruction);
             break;
         case 101: {
-            string funct7 = instruction.substr(0, 7);
+            string funct7 = instruction.substr(0, 6);
             switch (stoi(funct7)) {
                 case 0:
                     srli(instruction);
                     break;
-                case 100000:
+                case 10000:
                     srai(instruction);
                     break;
             }
@@ -636,12 +636,12 @@ void I_TYPE_funct3_3(string instruction) {
             slliw(instruction);
             break;
         case 101: {
-            string funct7 = instruction.substr(0, 7);
+            string funct7 = instruction.substr(0, 6);
             switch (stoi(funct7)) {
                 case 0:
                     srliw(instruction);
                     break;
-                case 100000:
+                case 10000:
                     sraiw(instruction);
                     break;
             }
@@ -1015,7 +1015,7 @@ void ecall() {
     ULL a2 = reg->getIntRegVal(12);
     ULL a3 = reg->getIntRegVal(13);
     ULL rval = systemCall((int)sys_call_num, a0, a1, a2, a3);
-    reg->setIntRegVal(10, rval);
+    reg->setIntRegVal(rval, 10);
 }
 void ebreak() {}
 void E_INS(string instruction) {
@@ -1497,16 +1497,16 @@ void FLoad_funct3(string instruction) {
     string funct3 = instruction.substr(17, 3);
     int tempInt = stoi(funct3);
     if (tempInt == 10) {
-        float *loadData;
+        float loadData;
         //*((unsigned int *)loadData) = mymem.rwmemReadWord(immediateNum +
         // rs1Val);
-        *((unsigned int *)loadData) = memory[immediateNum + rs1Val];
-        reg->setFloatRegVal(*loadData, rdInt);
+        *((unsigned int *)&loadData) = memory[immediateNum + rs1Val];
+        reg->setFloatRegVal(loadData, rdInt);
     } else if (tempInt == 11) {
-        double *LoadData;
+        double LoadData;
         //*((ULL *)LoadData) = mymem.rwmemReadDword(immediateNum + rs1Val);
-        *((ULL *)LoadData) = memory[immediateNum + rs1Val];
-        reg->setFloatRegVal(*LoadData, rdInt);
+        *((ULL *)&LoadData) = memory[immediateNum + rs1Val];
+        reg->setFloatRegVal(LoadData, rdInt);
     } else {
         cerr << "Error when parsing instruction: " << instruction << endl;
         cerr << "float load funct3 error!" << endl;
@@ -1805,7 +1805,7 @@ void decode(ULL startAddr, bool enable_debug) {
         //cerr << "PC: hex " << std::hex << reg->getPC() << endl;
         content = memory[reg->getPC()];
         //printf("%02x\n", content);
-        de.push_front(reg->getPC());
+        //de.push_front(reg->getPC());
         for (int i = 0; i < 32; ++i)
             tempChar[31 - i] = (content & (1 << i)) == 0 ? '0' : '1';
         tempChar[32] = 0;

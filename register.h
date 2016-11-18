@@ -21,6 +21,7 @@ struct RegisterFile {
         memset(f, 0, sizeof(f));
         pc = 0;
         x[0] = 0;
+        x[2] = 0x00000000f0000000ULL;
     }
 
     void setPC(ULL value) { pc = value; }

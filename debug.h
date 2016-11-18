@@ -214,14 +214,14 @@ class debuger {
         if (tmp == "mem") {
             std::cin >> tmp;
             auto value = stoull(tmp, nullptr, 16);
-            value = memory[value];
-            std::cout << std::ios::hex << value << std::endl;
+            value = (ULL)memory[value];
+            printf("%llx\n", value);
             std::ios::dec;
         } else if (tmp == "reg") {
             std::cin >> tmp;
             int value = reg_map[tmp];
             auto ans = getRegister(value);
-            printf("%x\n", ans);
+            printf("%llx\n", ans);
             std::ios::dec;
         } else {
             help();
