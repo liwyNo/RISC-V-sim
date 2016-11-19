@@ -1353,7 +1353,14 @@ instructions
  */
 //---------------------lalala-------------------------
 void FSQRT_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
-void FSGNJ_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
+void FSGNJ_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+    double rs1Val = reg->getFloatRegVal(rs1Int);
+    double rs2Val = reg->getFloatRegVal(rs2Int);
+    double rdVal = rs1val & (~(1 << 63));
+    double mid_var = (rs2val >> 63) << 63;
+    rdVal |= mid_var;
+    reg->setFloatRegVal(rdVal, rdInt);
+}
 void FMIN_MAX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
 void FCLASS(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
 //---------------------lalala-------------------------
