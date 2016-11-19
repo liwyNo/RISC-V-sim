@@ -147,7 +147,7 @@ class debuger {
             unsigned long long dword;
             double db;
         } value;
-        if(val == 64)
+        if (val == 64)
             value.dword = reg->getPC();
         else if (val >= 32)
             value.db = reg->getFloatRegVal(val - 32);
@@ -162,8 +162,7 @@ class debuger {
         map_init();
     }
     void wait() {
-        if(run)
-            return;
+        if (run) return;
         while ((!step && !has_until) || judge()) {
             step = 0;
             has_until = false;
@@ -178,19 +177,17 @@ class debuger {
                 sstep();
             else if (tmp == "u")
                 until();
-            else if(tmp == "n")
+            else if (tmp == "n")
                 step = 1;
-            else if(tmp == "c") {
+            else if (tmp == "c") {
                 run = true;
                 return;
-            }
-            else {
+            } else {
                 std::cerr << "Error: Debug input error." << std::endl;
                 help();
             }
         }
-        if(step != 0)
-            step--;
+        if (step != 0) step--;
     }
 
    private:
@@ -241,13 +238,11 @@ class debuger {
             judge_mem = true;
             std::cin >> tmp;
             cnt = stoull(tmp, nullptr, 16);
-        }
-        else if (tmp == "reg") {
+        } else if (tmp == "reg") {
             judge_mem = false;
             std::cin >> tmp;
             cnt = reg_map[tmp];
-        }
-        else {
+        } else {
             has_until = false;
             return;
         }

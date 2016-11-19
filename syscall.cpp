@@ -5,25 +5,25 @@
 #include "syscall.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <sys/stat.h>
 #include <sys/time.h>
+#include <unistd.h>
 #include <cassert>
 #include <iostream>
-#include <sys/stat.h>
 #include "vmm.h"
 extern unsigned long long sbrk_point;
 extern VM memory;
 using ULL = unsigned long long;
 void sys_exit(int code) { exit(code); }
 ssize_t sys_read(int fd, ULL buf, ssize_t n) {
-    char * p_buf = new char[n + 1];
+    char* p_buf = new char[n + 1];
     auto rval = read(fd, p_buf, n);
     memory.load(p_buf, buf, n);
     delete[] p_buf;
     return rval;
 }
 ssize_t sys_write(int fd, ULL buf, ssize_t n) {
-    char * p_buf = new char[n + 1];
+    char* p_buf = new char[n + 1];
     memory.store(p_buf, buf, n);
     auto rval = write(fd, p_buf, n);
     delete[] p_buf;
@@ -36,19 +36,20 @@ int sys_gettimeofday(ULL offset) {
     return rval;
 }
 ULL sys_brk(ULL ptr) {
-    if(ptr == 0)
+    if (ptr == 0)
         return sbrk_point;
     else
         return ptr;
 }
-int sys_close(int fd){
-    return close(fd);
-}
-int sys_fstat(int fd, ULL buf){
+int sys_close(int fd) { return close(fd); }
+int sys_fstat(int fd, ULL buf) {
     struct stat st;
     auto rval = fstat(fd, &st);
     memory.load((const char*)(&st), buf, sizeof(struct stat));
     return rval;
+}
+ssize_t sys_lseek(int fd, size_t ptr, int whence) {
+    return lseek(fd, ptr, whence);
 }
 ULL systemCall(int sys_code, ULL a0, ULL a1, ULL a2, ULL a3) {
     ULL rval = 0;
@@ -74,8 +75,11 @@ ULL systemCall(int sys_code, ULL a0, ULL a1, ULL a2, ULL a3) {
         case SYS_fstat:
             rval = sys_fstat(a0, a1);
             break;
+        case SYS_lseek:
+            rval = sys_lseek(a0, a1, a2);
+            break;
         default:
-            std::cerr << "Error: Systemcall error." << std::endl;
+            std::cerr << "Error: Systemcall error." << sys_code << std::endl;
             assert(false);
     }
     return rval;

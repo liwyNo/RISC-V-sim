@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -8,7 +9,6 @@
 #include "register.h"
 #include "syscall.h"
 #include "vmm.h"
-#include <deque>
 using namespace std;
 
 deque<unsigned long long> de;
@@ -223,6 +223,7 @@ void R_TYPE_funct3_3(string instruction) {
     int rdInt = (content >> 7) & 31;
 
     rs1Val = reg->getIntRegVal(rs1Val);
+    rs2Val = reg->getIntRegVal(rs2Val);
     // common part ends here
 
     string funct3 = instruction.substr(17, 3);
@@ -248,6 +249,7 @@ void R_TYPE_funct3_4(string instruction) {
     int rdInt = (content >> 7) & 31;
 
     rs1Val = reg->getIntRegVal(rs1Val);
+    rs2Val = reg->getIntRegVal(rs2Val);
     // common part ends here
 
     string funct3 = instruction.substr(17, 3);
@@ -302,6 +304,7 @@ void R_TYPE_funct7_2(string instruction) {
         case 1:
             void M_TYPE_funct3_2(string instruction);
             M_TYPE_funct3_2(instruction);
+            break;
         default:
             cerr << "Error when parsing instruction: " << instruction << endl;
             cerr << "R-TYPE funct7 error!" << endl;
@@ -1349,10 +1352,10 @@ This part finishes the decode part of FandD-TYPE and lists aLL the FandD-TYPE
 instructions
  */
 //---------------------lalala-------------------------
-void FSQRT_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {}
-void FSGNJ_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {}
-void FMIN_MAX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {}
-void FCLASS(int rs1Int, int rs2Int, int rdInt, int rmInt) {}
+void FSQRT_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
+void FSGNJ_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
+void FMIN_MAX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
+void FCLASS(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
 //---------------------lalala-------------------------
 
 void FADD_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
@@ -1802,14 +1805,14 @@ void decode(ULL startAddr, bool enable_debug) {
         memset(tempChar, 0, sizeof(tempChar));
 
         // cout << "PC: " << reg->getPC() << endl;
-        //cerr << "PC: hex " << std::hex << reg->getPC() << endl;
+        // cerr << "PC: hex " << std::hex << reg->getPC() << endl;
         content = memory[reg->getPC()];
-        //printf("%02x\n", content);
-        //de.push_front(reg->getPC());
+        // printf("%02x\n", content);
+        // de.push_front(reg->getPC());
         for (int i = 0; i < 32; ++i)
             tempChar[31 - i] = (content & (1 << i)) == 0 ? '0' : '1';
         tempChar[32] = 0;
-            string instruction(tempChar);
+        string instruction(tempChar);
 
         // std::cout << instruction << endl;
         getOpcode(instruction);
