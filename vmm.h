@@ -16,6 +16,9 @@ struct VM {
     unsigned long long TLB[3];
     std::unordered_map<unsigned long long, unsigned char*> vm_pool;
     block operator[](unsigned long long offset);
+    VM(){
+        vm_pool[0] = new unsigned char[PAGE_SIZE];
+    }
     bool load(const char* src, unsigned long long des, unsigned long long len) {
         while (1) {
             if (((des + len) & TAG_MASK) != (des & TAG_MASK)) {
