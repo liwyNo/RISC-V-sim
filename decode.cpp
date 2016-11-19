@@ -1354,12 +1354,58 @@ instructions
 //---------------------lalala-------------------------
 void FSQRT_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
 void FSGNJ_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    double rs1Val = reg->getFloatRegVal(rs1Int);
-    double rs2Val = reg->getFloatRegVal(rs2Int);
-    double rdVal = rs1val & (~(1 << 63));
-    double mid_var = (rs2val >> 63) << 63;
-    rdVal |= mid_var;
-    reg->setFloatRegVal(rdVal, rdInt);
+    union {
+        ULL dword;
+        double db;
+    } rs1Val, rs2Val, rdVal;
+    rs1Val.db = reg->getFloatRegVal(rs1Int);
+    rs2Val.db = reg->getFloatRegVal(rs2Int);
+    rdVal.dword = rs1Val.dword & (~(1ULL << 63));
+    ULL mid_var = (rs2Val.dword >> 63) << 63;
+    rdVal.dword |= mid_var;
+    reg->setFloatRegVal(rdVal.db, rdInt);
+}
+void FSGNJN_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+    union {
+        ULL dword;
+        double db;
+    } rs1Val, rs2Val, rdVal;
+    rs1Val.db = reg->getFloatRegVal(rs1Int);
+    rs2Val.db = reg->getFloatRegVal(rs2Int);
+    rdVal.dword = rs1Val.dword & (~(1ULL << 63));
+    ULL mid_var = ((~rs2Val.dword) >> 63) << 63;
+    rdVal.dword |= mid_var;
+    reg->setFloatRegVal(rdVal.db, rdInt);
+}
+void FSGNJX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+    union {
+        ULL dword;
+        double db;
+    } rs1Val, rs2Val, rdVal;
+    rs1Val.db = reg->getFloatRegVal(rs1Int);
+    rs2Val.db = reg->getFloatRegVal(rs2Int);
+    rdVal.dword = rs1Val.dword & (~(1ULL << 63));
+    ULL mid_var = ((rs2Val.dword ^ rs1Val.dword) >> 63) << 63;
+    rdVal.dword |= mid_var;
+    reg->setFloatRegVal(rdVal.db, rdInt);
+}
+void FSGNJ_D_funct3(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+    int funct3 = rmInt;
+    switch (funct3) {
+        case 0:
+            FSGNJ_D(rs1Int, rs2Int, rdInt, rmInt);
+            break;
+        case 1:
+            FSGNJN_D(rs1Int, rs2Int, rdInt, rmInt);
+            break;
+        case 2:
+            FSGNJX_D(rs1Int, rs2Int, rdInt, rmInt);
+            break;
+        default:
+            cerr << "FSGNJN_D ins was wrong!" << endl;
+            cerr << "Exit!" << endl;
+            assert(false);
+    }
 }
 void FMIN_MAX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
 void FCLASS(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
@@ -1373,7 +1419,7 @@ void FADD_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
 void FSUB_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     double rs1Val = reg->getFloatRegVal(rs1Int);
     double rs2Val = reg->getFloatRegVal(rs2Int);
-    reg->setFloatRegVal(rs1Val + rs2Val, rdInt);
+    reg->setFloatRegVal(rs1Val - rs2Val, rdInt);
 }
 void FMUL_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     double rs1Val = reg->getFloatRegVal(rs1Int);
@@ -1697,7 +1743,7 @@ void F_TYPE_funct7(string instruction) {
             FSQRT_D(rs1Int, rs2Int, rdInt, rmInt);
             break;
         case 10001:
-            FSGNJ_D(rs1Int, rs2Int, rdInt, rmInt);
+            FSGNJ_D_funct3(rs1Int, rs2Int, rdInt, rmInt);
             break;
         case 10101:
             FMIN_MAX_D(rs1Int, rs2Int, rdInt, rmInt);
