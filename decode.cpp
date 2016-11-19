@@ -119,7 +119,7 @@ void addw(ULL rs1Val, ULL rs2Val, int rdInt) {
     int src_2 = rs2Val;
     int sum = src_1 + src_2;
     LL rdVal = sum;
-    reg->setIntRegVal((ULL)sum, rdInt);
+    reg->setIntRegVal((ULL)rdVal, rdInt);
 }
 void sllw(ULL rs1Val, ULL rs2Val, int rdInt) {
     rs2Val = rs2Val & 31;
@@ -138,7 +138,7 @@ void subw(ULL rs1Val, ULL rs2Val, int rdInt) {
     int src_2 = rs2Val;
     int sum = src_1 - src_2;
     LL rdVal = sum;
-    reg->setIntRegVal((ULL)sum, rdInt);
+    reg->setIntRegVal((ULL)rdVal, rdInt);
 }
 void sraw(ULL rs1Val, ULL rs2Val, int rdInt) {
     rs2Val = rs2Val & 31;
@@ -1540,7 +1540,25 @@ void FCVT_SW_SL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
         assert(false);
     }
 }
-
+void FCVT_SL_SW(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+    if (rs2Int == 0) {
+        float rs1Val = reg->getFloatRegVal(rs1Int);
+        reg->setIntRegVal((int)rs1Val, rdInt);
+    } else if (rs2Int == 1) {
+        float rs1Val = reg->getFloatRegVal(rs1Int);
+        reg->setIntRegVal((unsigned int)rs1Val, rdInt);
+    } else if (rs2Int == 2) {
+        float rs1Val = reg->getFloatRegVal(rs1Int);
+        reg->setIntRegVal((long long)rs1Val, rdInt);
+    } else if (rs2Int == 3) {
+        float rs1Val = reg->getFloatRegVal(rs1Int);
+        reg->setIntRegVal((unsigned long long)rs1Val, rdInt);
+    } else {
+        cerr << "fcvt.*.s ins was wrong!" << endl;
+        cerr << "Exit!" << endl;
+        assert(false);
+    }
+}
 /*
 the control logic
 */
@@ -1786,6 +1804,9 @@ void F_TYPE_funct7(string instruction) {
             break;
         case 1101000:
             FCVT_SW_SL(rs1Int, rs2Int, rdInt, rmInt);
+            break;
+        case 1100000:
+            FCVT_SL_SW(rs1Int, rs2Int, rdInt, rmInt);
             break;
         default:
             cerr << "Error when parsing instruction: " << instruction << endl;

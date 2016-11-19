@@ -13,8 +13,12 @@
 #include "vmm.h"
 extern unsigned long long sbrk_point;
 extern VM memory;
+extern long long ins_counter;
 using ULL = unsigned long long;
-void sys_exit(int code) { exit(code); }
+void sys_exit(int code) { 
+	printf("Total instruction: %lld", ins_counter);
+	exit(code); 
+}
 ssize_t sys_read(int fd, ULL buf, ssize_t n) {
     char* p_buf = new char[n + 1];
     auto rval = read(fd, p_buf, n);
