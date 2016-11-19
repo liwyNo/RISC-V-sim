@@ -1556,7 +1556,7 @@ void FLoad_funct3(string instruction) {
         float loadData;
         //*((unsigned int *)loadData) = mymem.rwmemReadWord(immediateNum +
         // rs1Val);
-        *((unsigned int *)&loadData) = memory[immediateNum + rs1Val];
+        *((unsigned int *)&loadData) = (ULL)memory[immediateNum + rs1Val];
         reg->setFloatRegVal(loadData, rdInt);
     } else if (tempInt == 11) {
         double LoadData;
@@ -1587,11 +1587,11 @@ void FStore_funct3(string instruction) {
     if (tempInt == 10) {
         float rs2Val = reg->getFloatRegVal(rs2Int);
         // mymem.rwmemWriteWord(*((unsigned int *)(&rs2Val)), memoryAddr);
-        memoryWrite(memoryAddr, rs2Val, 4);
+        memoryWrite(memoryAddr, *((unsigned int*)&rs2Val), 4);
     } else if (tempInt == 11) {
         double rs2val = reg->getFloatRegVal(rs2Int);
         // mymem.rwmemWriteDword(*((ULL *)(&rs2val)), memoryAddr);
-        memoryWrite(memoryAddr, rs2val, 8);
+        memoryWrite(memoryAddr, *((ULL*)&rs2val), 8);
     } else {
         cerr << "Error when parsing instruction: " << instruction << endl;
         cerr << "float load funct3 error!" << endl;
