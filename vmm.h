@@ -13,6 +13,7 @@
 #define TAG_MASK (~PAGE_MASK)
 struct block;
 struct VM {
+    unsigned long long TLB[3];
     std::unordered_map<unsigned long long, unsigned char*> vm_pool;
     block operator[](unsigned long long offset);
     bool load(const char* src, unsigned long long des, unsigned long long len) {
@@ -69,8 +70,14 @@ struct VM {
         return true;
     }
     void exist(unsigned long long tag) {
+        for(int i = 0; i < 3; ++i)
+            if(TLB[i] == tag)
+                return;
         if (vm_pool.find(tag) == vm_pool.end())
             vm_pool[tag] = new unsigned char[PAGE_SIZE];
+        for(int i = 0; i < 2; ++i)
+            TLB[i + 1] = TLB[i];
+        TLB[0] = tag;
     }
 };
 struct block {

@@ -18,7 +18,7 @@ RegisterFile *reg;
 extern VM memory;
 int content;  // the integer value of one instruction
 bool canjump = false;
-void memoryWrite(ULL offset, ULL value, unsigned char bit) {
+inline void memoryWrite(ULL offset, ULL value, unsigned char bit) {
     ULL ori = memory[offset];
     ULL mask = bit == 8 ? ~0ULL : ((1ULL << (bit * 8)) - 1);
     ori = (ori & ~mask) | (value & mask);
@@ -26,7 +26,7 @@ void memoryWrite(ULL offset, ULL value, unsigned char bit) {
 }
 
 // Initialize the map index and register file
-void Initialize(ULL startAddr) {
+inline void Initialize(ULL startAddr) {
     reg->setPC(startAddr);
 
     content = 0;
@@ -58,25 +58,25 @@ void Initialize(ULL startAddr) {
 /*
 This part finishes the decode part and lists aLL the R-TYPE instructions
  */
-void sub(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void sub(ULL rs1Val, ULL rs2Val, int rdInt) {
     LL rdVal = (LL)rs1Val - (LL)rs2Val;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void sra(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void sra(ULL rs1Val, ULL rs2Val, int rdInt) {
     rs2Val = rs2Val & 63;  // lower 5 bits is used
     LL rdVal = (LL)rs1Val >> rs2Val;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void add(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void add(ULL rs1Val, ULL rs2Val, int rdInt) {
     LL rdVal = (LL)rs1Val + (LL)rs2Val;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void sll(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void sll(ULL rs1Val, ULL rs2Val, int rdInt) {
     rs2Val = rs2Val & 63;
     ULL rdVal = rs1Val << rs2Val;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void slt(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void slt(ULL rs1Val, ULL rs2Val, int rdInt) {
     LL rdVal;
     if ((LL)rs1Val < (LL)rs2Val)
         rdVal = 1;
@@ -84,7 +84,7 @@ void slt(ULL rs1Val, ULL rs2Val, int rdInt) {
         rdVal = 0;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void sltu(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void sltu(ULL rs1Val, ULL rs2Val, int rdInt) {
     ULL rdVal;
     if ((ULL)rs1Val < (ULL)rs2Val)
         rdVal = 1;
@@ -92,24 +92,24 @@ void sltu(ULL rs1Val, ULL rs2Val, int rdInt) {
         rdVal = 0;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void _xor(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void _xor(ULL rs1Val, ULL rs2Val, int rdInt) {
     LL rdVal = (LL)rs1Val ^ (LL)rs2Val;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void srl(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void srl(ULL rs1Val, ULL rs2Val, int rdInt) {
     rs2Val = rs2Val & 63;
     ULL rdVal = rs1Val >> rs2Val;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void _or(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void _or(ULL rs1Val, ULL rs2Val, int rdInt) {
     LL rdVal = (LL)rs1Val | (LL)rs2Val;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void _and(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void _and(ULL rs1Val, ULL rs2Val, int rdInt) {
     LL rdVal = (LL)rs1Val & (LL)rs2Val;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void addw(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void addw(ULL rs1Val, ULL rs2Val, int rdInt) {
     /*
     Overfows are ignored, and the low
     32-bits of the result is sign-extended to 64-bits
@@ -121,33 +121,33 @@ void addw(ULL rs1Val, ULL rs2Val, int rdInt) {
     LL rdVal = sum;
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-void sllw(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void sllw(ULL rs1Val, ULL rs2Val, int rdInt) {
     rs2Val = rs2Val & 31;
     int src = rs1Val;
     LL rdVal = src << rs2Val;
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-void srlw(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void srlw(ULL rs1Val, ULL rs2Val, int rdInt) {
     rs2Val = rs2Val & 31;
     unsigned int src = rs1Val;
     ULL rdVal = src >> rs2Val;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void subw(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void subw(ULL rs1Val, ULL rs2Val, int rdInt) {
     int src_1 = rs1Val;
     int src_2 = rs2Val;
     int sum = src_1 - src_2;
     LL rdVal = sum;
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-void sraw(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void sraw(ULL rs1Val, ULL rs2Val, int rdInt) {
     rs2Val = rs2Val & 31;
     int src = rs1Val;
     LL rdVal = src >> rs2Val;
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
 
-void R_TYPE_funct3_1(string instruction) {
+inline void R_TYPE_funct3_1(string & instruction) {
     // aLL R-TYPE instructions have the same part
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
@@ -173,7 +173,7 @@ void R_TYPE_funct3_1(string instruction) {
             return;
     }
 }
-void R_TYPE_funct3_2(string instruction) {
+inline void R_TYPE_funct3_2(string & instruction) {
     // aLL R-TYPE instructions have the same part
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
@@ -217,7 +217,7 @@ void R_TYPE_funct3_2(string instruction) {
             return;
     }
 }
-void R_TYPE_funct3_3(string instruction) {
+inline void R_TYPE_funct3_3(string & instruction) {
     // aLL R-TYPE instructions have the same part
     int rs1Val = (content >> 15) & 31;
     int rs2Val = (content >> 20) & 31;
@@ -243,7 +243,7 @@ void R_TYPE_funct3_3(string instruction) {
             return;
     }
 }
-void R_TYPE_funct3_4(string instruction) {
+inline void R_TYPE_funct3_4(string & instruction) {
     // aLL R-TYPE instructions have the same part
     int rs1Val = (content >> 15) & 31;
     int rs2Val = (content >> 20) & 31;
@@ -272,7 +272,7 @@ void R_TYPE_funct3_4(string instruction) {
             return;
     }
 }
-void R_TYPE_funct7_1(string instruction) {
+inline void R_TYPE_funct7_1(string & instruction) {
     string funct7 = instruction.substr(0, 7);
     switch (stoi(funct7)) {
         case 100000:
@@ -282,7 +282,7 @@ void R_TYPE_funct7_1(string instruction) {
             R_TYPE_funct3_2(instruction);
             break;
         case 1:
-            void M_TYPE_funct3_1(string instruction);
+            void M_TYPE_funct3_1(string & instruction);
             M_TYPE_funct3_1(instruction);
             break;
         default:
@@ -293,7 +293,7 @@ void R_TYPE_funct7_1(string instruction) {
             return;
     }
 }
-void R_TYPE_funct7_2(string instruction) {
+inline void R_TYPE_funct7_2(string & instruction) {
     string funct7 = instruction.substr(0, 7);
     switch (stoi(funct7)) {
         case 100000:
@@ -303,7 +303,7 @@ void R_TYPE_funct7_2(string instruction) {
             R_TYPE_funct3_4(instruction);
             break;
         case 1:
-            void M_TYPE_funct3_2(string instruction);
+            void M_TYPE_funct3_2(string & instruction);
             M_TYPE_funct3_2(instruction);
             break;
         default:
@@ -314,7 +314,7 @@ void R_TYPE_funct7_2(string instruction) {
             return;
     }
 }
-void R_TYPE_opcode(string instruction) {
+inline void R_TYPE_opcode(string & instruction) {
     string opcode = instruction.substr(25, 7);
     switch (stoi(opcode)) {
         case 110011:
@@ -342,7 +342,7 @@ End R-TYPE decode
 This part finishes the decode part of I-TYPE and lists aLL the I-TYPE
 instructions
  */
-void slli(string instruction) {
+inline void slli(string & instruction) {
     LL shamt = (content >> 20) & 63;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -351,7 +351,7 @@ void slli(string instruction) {
     LL rdVal = rs1Val << shamt;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void srli(string instruction) {
+inline void srli(string & instruction) {
     LL shamt = (content >> 20) & 63;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -360,7 +360,7 @@ void srli(string instruction) {
     ULL rdVal = rs1Val >> shamt;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void srai(string instruction) {
+inline void srai(string & instruction) {
     LL shamt = (content >> 20) & 63;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -369,7 +369,7 @@ void srai(string instruction) {
     LL rdVal = rs1Val >> shamt;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void addi(string instruction) {
+inline void addi(string & instruction) {
     LL immediateNum = (LL)(content >> 20);
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -378,7 +378,7 @@ void addi(string instruction) {
     LL rdVal = rs1Val + immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void slti(string instruction) {
+inline void slti(string & instruction) {
     LL immediateNum = (LL)(content >> 20);
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -390,7 +390,7 @@ void slti(string instruction) {
 }
 // the immediate is first sign-extended to XLEN bits then treated as an unsigned
 // number
-void sltiu(string instruction) {
+inline void sltiu(string & instruction) {
     ULL immediateNum = (ULL)((LL)(content >> 20));  // the immediate is first
                                                     // sign-extended to XLEN
                                                     // bits then treated as an
@@ -403,7 +403,7 @@ void sltiu(string instruction) {
     if (rs1Val < immediateNum) rdVal = 1;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void xori(string instruction) {
+inline void xori(string & instruction) {
     LL immediateNum = (LL)(content >> 20);
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -412,7 +412,7 @@ void xori(string instruction) {
     LL rdVal = rs1Val ^ immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void ori(string instruction) {
+inline void ori(string & instruction) {
     LL immediateNum = (LL)(content >> 20);
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -421,7 +421,7 @@ void ori(string instruction) {
     LL rdVal = rs1Val | immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void andi(string instruction) {
+inline void andi(string & instruction) {
     LL immediateNum = (LL)(content >> 20);
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -430,7 +430,7 @@ void andi(string instruction) {
     LL rdVal = rs1Val & immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void lb(string instruction) {
+inline void lb(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = (LL)content >> 20;
@@ -440,7 +440,7 @@ void lb(string instruction) {
     loadData = (loadData << 56) >> 56;  // return value can be sign-extended
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-void lh(string instruction) {
+inline void lh(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = (LL)content >> 20;
@@ -450,7 +450,7 @@ void lh(string instruction) {
     loadData = (loadData << 48) >> 48;  // same as the reason mentioned above
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-void lw(string instruction) {
+inline void lw(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = (LL)content >> 20;
@@ -461,7 +461,7 @@ void lw(string instruction) {
     loadData = (loadData << 32) >> 32;
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-void ld(string instruction) {
+inline void ld(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = (LL)content >> 20;
@@ -471,7 +471,7 @@ void ld(string instruction) {
 
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-void lbu(string instruction) {
+inline void lbu(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = content >> 20;
@@ -481,7 +481,7 @@ void lbu(string instruction) {
     loadData = loadData & 255;
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-void lhu(string instruction) {
+inline void lhu(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = content >> 20;
@@ -491,7 +491,7 @@ void lhu(string instruction) {
     loadData = loadData & 65535;
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-void lwu(string instruction) {
+inline void lwu(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = content >> 20;
@@ -502,7 +502,7 @@ void lwu(string instruction) {
     loadData = loadData & (~mask);
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-void jalr(string instruction) {
+inline void jalr(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = content >> 20;
@@ -512,7 +512,7 @@ void jalr(string instruction) {
     canjump = true;
     reg->setPC((ULL)(((rs1Val + immediateNum) >> 1) << 1));
 }
-void addiw(string instruction) {
+inline void addiw(string & instruction) {
     int immediateNum = content >> 20;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -521,7 +521,7 @@ void addiw(string instruction) {
     LL rdVal = (LL)rs1Val;
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-void slliw(string instruction) {
+inline void slliw(string & instruction) {
     int shamt = (content >> 20) & 31;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -530,7 +530,7 @@ void slliw(string instruction) {
     LL rdVal = (LL)(rs1Val << shamt);
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-void srliw(string instruction) {
+inline void srliw(string & instruction) {
     /*
     operate on 32-bit values and produce signed 32-bit results.
      */
@@ -543,7 +543,7 @@ void srliw(string instruction) {
     LL rdVal = (LL)((int)rs1Val);
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-void sraiw(string instruction) {
+inline void sraiw(string & instruction) {
     int shamt = (content >> 20) & 31;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -553,7 +553,7 @@ void sraiw(string instruction) {
     LL rdVal = (LL)rs1Val;
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-void I_TYPE_funct3_1(string instruction) {
+inline void I_TYPE_funct3_1(string & instruction) {
     string funct3 = instruction.substr(17, 3);
 
     switch (stoi(funct3)) {
@@ -597,7 +597,7 @@ void I_TYPE_funct3_1(string instruction) {
             return;
     }
 }
-void I_TYPE_funct3_2(string instruction) {
+inline void I_TYPE_funct3_2(string & instruction) {
     string funct3 = instruction.substr(17, 3);
 
     switch (stoi(funct3)) {
@@ -630,7 +630,7 @@ void I_TYPE_funct3_2(string instruction) {
             return;
     }
 }
-void I_TYPE_funct3_3(string instruction) {
+inline void I_TYPE_funct3_3(string & instruction) {
     string funct3 = instruction.substr(17, 3);
     switch (stoi(funct3)) {
         case 0:
@@ -658,7 +658,7 @@ void I_TYPE_funct3_3(string instruction) {
             return;
     }
 }
-void I_TYPE_opcode(string instruction) {
+inline void I_TYPE_opcode(string & instruction) {
     string opcode = instruction.substr(25, 7);
     switch (stoi(opcode)) {
         case 10011:
@@ -692,7 +692,7 @@ End I-TYPE decode
 This part finishes the decode part of S-TYPE and lists aLL the S-TYPE
 instructions
  */
-void sb(string instruction) {
+inline void sb(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     LL immediateLowerPart = (LL)(content >> 7) & 31;
@@ -707,7 +707,7 @@ void sb(string instruction) {
 
     memoryWrite((ULL)memoryAddr, rs2Val, 1);
 }
-void sh(string instruction) {
+inline void sh(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     LL immediateLowerPart = (LL)(content >> 7) & 31;
@@ -722,7 +722,7 @@ void sh(string instruction) {
 
     memoryWrite((ULL)memoryAddr, rs2Val, 2);
 }
-void sw(string instruction) {
+inline void sw(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     LL immediateLowerPart = (LL)(content >> 7) & 31;
@@ -738,7 +738,7 @@ void sw(string instruction) {
 
     memoryWrite(memoryAddr, rs2Val, 4);
 }
-void sd(string instruction) {
+inline void sd(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     LL immediateLowerPart = (LL)(content >> 7) & 31;
@@ -752,7 +752,7 @@ void sd(string instruction) {
 
     memoryWrite(memoryAddr, rs2Val, 8);
 }
-void S_TYPE_funct3(string instruction) {
+inline void S_TYPE_funct3(string & instruction) {
     string funct3 = instruction.substr(17, 3);
     switch (stoi(funct3)) {
         case 0:
@@ -786,7 +786,7 @@ End S-TYPE decode
 This part finishes the decode part of SB-TYPE and lists aLL the SB-TYPE
 instructions
  */
-void beq(string instruction) {
+inline void beq(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -805,7 +805,7 @@ void beq(string instruction) {
         reg->changePC(immediateNum);
     }
 }
-void bne(string instruction) {
+inline void bne(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -824,7 +824,7 @@ void bne(string instruction) {
         reg->changePC(immediateNum);
     }
 }
-void blt(string instruction) {
+inline void blt(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -843,7 +843,7 @@ void blt(string instruction) {
         reg->changePC(immediateNum);
     }
 }
-void bge(string instruction) {
+inline void bge(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -862,7 +862,7 @@ void bge(string instruction) {
         reg->changePC(immediateNum);
     }
 }
-void bltu(string instruction) {
+inline void bltu(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -881,7 +881,7 @@ void bltu(string instruction) {
         reg->changePC(immediateNum);
     }
 }
-void bgeu(string instruction) {
+inline void bgeu(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -900,7 +900,7 @@ void bgeu(string instruction) {
         reg->changePC(immediateNum);
     }
 }
-void SB_TYPE_funct3(string instruction) {
+inline void SB_TYPE_funct3(string & instruction) {
     string funct3 = instruction.substr(17, 3);
     switch (stoi(funct3)) {
         case 0:
@@ -940,7 +940,7 @@ End SB-TYPE decode
 This part finishes the decode part of SB-TYPE and lists aLL the SB-TYPE
 instructions
  */
-void lui(string instruction) {
+inline void lui(string & instruction) {
     int rdInt = (content >> 7) & 31;
     LL immediateNum =
         (LL)((content >> 12)
@@ -948,7 +948,7 @@ void lui(string instruction) {
 
     reg->setIntRegVal((ULL)immediateNum, rdInt);
 }
-void auipc(string instruction) {
+inline void auipc(string & instruction) {
     int rdInt = (content >> 7) & 31;
     LL immediateNum =
         (LL)((content >> 12)
@@ -957,7 +957,7 @@ void auipc(string instruction) {
     ULL rdVal = reg->getPC() + (ULL)immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
 }
-void U_TYPE_opcode(string instruction) {
+inline void U_TYPE_opcode(string & instruction) {
     string opcode = instruction.substr(25, 7);
     switch (stoi(opcode)) {
         case 110111:
@@ -985,7 +985,7 @@ End SB-TYPE decode
 This part finishes the decode part of UJ-TYPE and lists aLL the UJ-TYPE
 instructions
  */
-void jal(string instruction) {
+inline void jal(string & instruction) {
     int rdInt = (content >> 7) & 31;
     LL immediateNum_1 = ((content >> 31) & 1) << 19;
     LL immediateNum_2 = ((content >> 12) & 255) << 11;
@@ -1011,7 +1011,7 @@ End UJ-TYPE decode
 /*
 This part parses some system instructions
  */
-void ecall() {
+inline void ecall() {
     // make it can compile first.
     LL sys_call_num = reg->getIntRegVal(17);
     ULL a0 = reg->getIntRegVal(10);
@@ -1021,8 +1021,8 @@ void ecall() {
     ULL rval = systemCall((int)sys_call_num, a0, a1, a2, a3);
     reg->setIntRegVal(rval, 10);
 }
-void ebreak() {}
-void E_INS(string instruction) {
+inline void ebreak() {}
+inline void E_INS(string & instruction) {
     string diffPart = instruction.substr(11, 1);
     switch (stoi(diffPart)) {
         case 0:
@@ -1033,7 +1033,7 @@ void E_INS(string instruction) {
             break;
     }
 }
-void SYS_INSTRUCTION(string instruction) {
+inline void SYS_INSTRUCTION(string & instruction) {
     string funct3 = instruction.substr(17, 3);
     switch (stoi(funct3)) {
         case 0:
@@ -1058,7 +1058,7 @@ End of decoding system instructions
 This part finishes the decode part of M-TYPE and lists aLL the M-TYPE
 instructions
  */
-void MUL(LL rs1Val, LL rs2Val, int rdInt) {
+inline void MUL(LL rs1Val, LL rs2Val, int rdInt) {
     LL rdVal;
     __asm__ __volatile__(
         "pushq %%rax\n\t"
@@ -1072,7 +1072,7 @@ void MUL(LL rs1Val, LL rs2Val, int rdInt) {
         : "r"(rs1Val), "r"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
-void MULH(LL rs1Val, LL rs2Val, int rdInt) {
+inline void MULH(LL rs1Val, LL rs2Val, int rdInt) {
     LL rdVal;
     __asm__ __volatile__(
         "pushq %%rax\n\t"
@@ -1086,7 +1086,7 @@ void MULH(LL rs1Val, LL rs2Val, int rdInt) {
         : "r"(rs1Val), "r"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
-void MULHSU(LL rs1Val, ULL rs2Val, int rdInt) {
+inline void MULHSU(LL rs1Val, ULL rs2Val, int rdInt) {
     LL rdVal;
     __asm__ __volatile__(
         "pushq %%rax\n\t"
@@ -1100,7 +1100,7 @@ void MULHSU(LL rs1Val, ULL rs2Val, int rdInt) {
         : "r"(rs1Val), "r"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
-void MULHU(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void MULHU(ULL rs1Val, ULL rs2Val, int rdInt) {
     ULL rdVal;
     __asm__ __volatile__(
         "pushq %%rax\n\t"
@@ -1114,7 +1114,7 @@ void MULHU(ULL rs1Val, ULL rs2Val, int rdInt) {
         : "r"(rs1Val), "r"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
-void DIV(LL rs1Val, LL rs2Val, int rdInt) {
+inline void DIV(LL rs1Val, LL rs2Val, int rdInt) {
     LL rdVal;
     if (rs2Val == 0) {
         reg->setIntRegVal(-1, rdInt);
@@ -1137,7 +1137,7 @@ void DIV(LL rs1Val, LL rs2Val, int rdInt) {
         : "r"(rs1Val), "m"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
-void DIVU(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void DIVU(ULL rs1Val, ULL rs2Val, int rdInt) {
     ULL rdVal;
     if (rs2Val == 0) {
         reg->setIntRegVal(0x7fffffffffffffff, rdInt);
@@ -1156,7 +1156,7 @@ void DIVU(ULL rs1Val, ULL rs2Val, int rdInt) {
         : "r"(rs1Val), "m"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
-void REM(LL rs1Val, LL rs2Val, int rdInt) {
+inline void REM(LL rs1Val, LL rs2Val, int rdInt) {
     LL rdVal;
     if (rs2Val == 0) {
         reg->setIntRegVal(rs1Val, rdInt);
@@ -1179,7 +1179,7 @@ void REM(LL rs1Val, LL rs2Val, int rdInt) {
         : "r"(rs1Val), "m"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
-void REMU(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void REMU(ULL rs1Val, ULL rs2Val, int rdInt) {
     ULL rdVal;
     if (rs2Val == 0) {
         reg->setIntRegVal(rs1Val, rdInt);
@@ -1198,7 +1198,7 @@ void REMU(ULL rs1Val, ULL rs2Val, int rdInt) {
         : "r"(rs1Val), "m"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
-void MULW(LL rs1Val, LL rs2Val, int rdInt) {
+inline void MULW(LL rs1Val, LL rs2Val, int rdInt) {
     LL rdVal;
     __asm__ __volatile__(
         "pushq %%rax\n\t"
@@ -1215,7 +1215,7 @@ void MULW(LL rs1Val, LL rs2Val, int rdInt) {
         : "m"(rs1Val), "m"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
-void DIVW(LL rs1Val, LL rs2Val, int rdInt) {
+inline void DIVW(LL rs1Val, LL rs2Val, int rdInt) {
     LL rdVal;
     if (rs2Val == 0) {
         reg->setIntRegVal(-1, rdInt);
@@ -1226,7 +1226,7 @@ void DIVW(LL rs1Val, LL rs2Val, int rdInt) {
     rdVal = (LL)(rs1 / rs2);
     reg->setIntRegVal(rdVal, rdInt);
 }
-void DIVUW(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void DIVUW(ULL rs1Val, ULL rs2Val, int rdInt) {
     ULL rdVal;
     if (rs2Val == 0) {
         reg->setIntRegVal(0x7fffffffffffffff, rdInt);
@@ -1237,7 +1237,7 @@ void DIVUW(ULL rs1Val, ULL rs2Val, int rdInt) {
     rdVal = (ULL)(rs1 / rs2);
     reg->setIntRegVal(rdVal, rdInt);
 }
-void REMW(LL rs1Val, LL rs2Val, int rdInt) {
+inline void REMW(LL rs1Val, LL rs2Val, int rdInt) {
     LL rdVal;
     if (rs2Val == 0) {
         reg->setIntRegVal((int)rs1Val, rdInt);
@@ -1248,7 +1248,7 @@ void REMW(LL rs1Val, LL rs2Val, int rdInt) {
     rdVal = (LL)(rs1 % rs2);
     reg->setIntRegVal(rdVal, rdInt);
 }
-void REMUW(ULL rs1Val, ULL rs2Val, int rdInt) {
+inline void REMUW(ULL rs1Val, ULL rs2Val, int rdInt) {
     ULL rdVal;
     if (rs2Val == 0) {
         reg->setIntRegVal((unsigned int)rs1Val, rdInt);
@@ -1260,7 +1260,7 @@ void REMUW(ULL rs1Val, ULL rs2Val, int rdInt) {
     reg->setIntRegVal(rdVal, rdInt);
 }
 
-void M_TYPE_funct3_1(string instruction) {
+void M_TYPE_funct3_1(string & instruction) {
     // aLL M-TYPE instructions have the same part
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
@@ -1305,7 +1305,7 @@ void M_TYPE_funct3_1(string instruction) {
     }
 }
 
-void M_TYPE_funct3_2(string instruction) {
+void M_TYPE_funct3_2(string & instruction) {
     // aLL M-TYPE instructions have the same part
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
@@ -1353,8 +1353,8 @@ This part finishes the decode part of FandD-TYPE and lists aLL the FandD-TYPE
 instructions
  */
 //---------------------lalala-------------------------
-void FSQRT_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
-void FSGNJ_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FSQRT_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
+inline void FSGNJ_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     union {
         ULL dword;
         double db;
@@ -1366,7 +1366,7 @@ void FSGNJ_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     rdVal.dword |= mid_var;
     reg->setFloatRegVal(rdVal.db, rdInt);
 }
-void FSGNJN_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FSGNJN_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     union {
         ULL dword;
         double db;
@@ -1378,7 +1378,7 @@ void FSGNJN_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     rdVal.dword |= mid_var;
     reg->setFloatRegVal(rdVal.db, rdInt);
 }
-void FSGNJX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FSGNJX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     union {
         ULL dword;
         double db;
@@ -1390,7 +1390,7 @@ void FSGNJX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     rdVal.dword |= mid_var;
     reg->setFloatRegVal(rdVal.db, rdInt);
 }
-void FSGNJ_D_funct3(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FSGNJ_D_funct3(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     int funct3 = rmInt;
     switch (funct3) {
         case 0:
@@ -1408,49 +1408,49 @@ void FSGNJ_D_funct3(int rs1Int, int rs2Int, int rdInt, int rmInt) {
             assert(false);
     }
 }
-void FMIN_MAX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
-void FCLASS(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
+inline void FMIN_MAX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
+inline void FCLASS(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
 //---------------------lalala-------------------------
 
-void FADD_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FADD_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     double rs1Val = reg->getFloatRegVal(rs1Int);
     double rs2Val = reg->getFloatRegVal(rs2Int);
     reg->setFloatRegVal(rs1Val + rs2Val, rdInt);
 }
-void FSUB_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FSUB_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     double rs1Val = reg->getFloatRegVal(rs1Int);
     double rs2Val = reg->getFloatRegVal(rs2Int);
     reg->setFloatRegVal(rs1Val - rs2Val, rdInt);
 }
-void FMUL_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FMUL_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     double rs1Val = reg->getFloatRegVal(rs1Int);
     double rs2Val = reg->getFloatRegVal(rs2Int);
     reg->setFloatRegVal(rs1Val * rs2Val, rdInt);
 }
-void FMUL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FMUL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     float rs1Val = reg->getFloatRegVal(rs1Int);
     float rs2Val = reg->getFloatRegVal(rs2Int);
     reg->setFloatRegVal(rs1Val * rs2Val, rdInt);
 }
-void FDIV(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FDIV(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     float rs1Val = reg->getFloatRegVal(rs1Int);
     float rs2Val = reg->getFloatRegVal(rs2Int);
     reg->setFloatRegVal(rs1Val / rs2Val, rdInt);
 }
-void FDIV_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FDIV_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     double rs1Val = reg->getFloatRegVal(rs1Int);
     double rs2Val = reg->getFloatRegVal(rs2Int);
     reg->setFloatRegVal(rs1Val / rs2Val, rdInt);
 }
-void FCVT_SD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FCVT_SD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     float rs1Val = reg->getFloatRegVal(rs1Int);
     reg->setFloatRegVal(rs1Val, rdInt);
 }
-void FCVT_DS(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FCVT_DS(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     float rs1Val = reg->getFloatRegVal(rs1Int);
     reg->setFloatRegVal(rs1Val, rdInt);
 }
-void FEQ_LT_LE(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FEQ_LT_LE(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     double rs1Val = reg->getFloatRegVal(rs1Int);
     double rs2Val = reg->getFloatRegVal(rs2Int);
     if (rmInt == 0) {
@@ -1474,7 +1474,7 @@ void FEQ_LT_LE(int rs1Int, int rs2Int, int rdInt, int rmInt) {
         assert(false);
     }
 }
-void FCVT_WD_LD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FCVT_WD_LD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     double rs1Val = reg->getFloatRegVal(rs1Int);
     if (rs2Int == 0) {
         reg->setIntRegVal((int)rs1Val, rdInt);
@@ -1490,7 +1490,7 @@ void FCVT_WD_LD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
         assert(false);
     }
 }
-void FCVT_DW_DL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FCVT_DW_DL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     if (rs2Int == 0) {
         int rs1Val = reg->getIntRegVal(rs1Int);
         reg->setFloatRegVal(rs1Val, rdInt);
@@ -1509,7 +1509,7 @@ void FCVT_DW_DL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
         assert(false);
     }
 }
-void FMV_XD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FMV_XD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     if (rmInt != 0) {
         FCLASS(rs1Int, rs2Int, rdInt, rmInt);
         return;
@@ -1517,11 +1517,11 @@ void FMV_XD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     double rs1Val = reg->getFloatRegVal(rs1Int);
     reg->setIntRegVal(*((unsigned long long *)(&rs1Val)), rdInt);
 }
-void FMV_DX(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FMV_DX(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     unsigned long long rs1Val = reg->getIntRegVal(rs1Int);
     reg->setFloatRegVal(*((double *)(&rs1Val)), rdInt);
 }
-void FCVT_SW_SL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FCVT_SW_SL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     if (rs2Int == 0) {
         int rs1Val = reg->getIntRegVal(rs1Int);
         reg->setFloatRegVal((float)rs1Val, rdInt);
@@ -1540,7 +1540,7 @@ void FCVT_SW_SL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
         assert(false);
     }
 }
-void FCVT_SL_SW(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+inline void FCVT_SL_SW(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     if (rs2Int == 0) {
         float rs1Val = reg->getFloatRegVal(rs1Int);
         reg->setIntRegVal((int)rs1Val, rdInt);
@@ -1562,7 +1562,7 @@ void FCVT_SL_SW(int rs1Int, int rs2Int, int rdInt, int rmInt) {
 /*
 the control logic
 */
-void FLoad_funct3(string instruction) {
+inline void FLoad_funct3(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = (LL)content >> 20;
@@ -1593,7 +1593,7 @@ void FLoad_funct3(string instruction) {
     }
 }
 
-void FStore_funct3(string instruction) {
+inline void FStore_funct3(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     LL immediateLowerPart = (LL)(content >> 7) & 31;
@@ -1630,7 +1630,7 @@ void FStore_funct3(string instruction) {
     }
 }
 
-void FMadd_funct2(string instruction) {
+inline void FMadd_funct2(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     int rs3Int = (content >> 27) & 31;
@@ -1658,7 +1658,7 @@ void FMadd_funct2(string instruction) {
     }
 }
 
-void FMsub_funct2(string instruction) {
+inline void FMsub_funct2(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     int rs3Int = (content >> 27) & 31;
@@ -1686,7 +1686,7 @@ void FMsub_funct2(string instruction) {
     }
 }
 
-void FNMsub_funct2(string instruction) {
+inline void FNMsub_funct2(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     int rs3Int = (content >> 27) & 31;
@@ -1714,7 +1714,7 @@ void FNMsub_funct2(string instruction) {
     }
 }
 
-void FNMadd_funct2(string instruction) {
+inline void FNMadd_funct2(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     int rs3Int = (content >> 27) & 31;
@@ -1742,7 +1742,7 @@ void FNMadd_funct2(string instruction) {
     }
 }
 
-void F_TYPE_funct7(string instruction) {
+inline void F_TYPE_funct7(string & instruction) {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     int rs3Int = (content >> 27) & 31;
@@ -1821,7 +1821,7 @@ End of decoding FandD-TPYE instructions
  */
 
 // to get the type of the instruction
-void getOpcode(string instruction) {
+inline void getOpcode(string & instruction) {
     string opcode = instruction.substr(25, 7);
     /*
     R-TYPE:1; I-TYPE:2; S-TYPE:3; SB-TYPE:4; UJ-TYPE:5; U-TYPE:6; SYS-TYPE:7;
