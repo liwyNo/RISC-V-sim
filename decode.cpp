@@ -11,6 +11,7 @@
 #include "vmm.h"
 using namespace std;
 
+long long ins_counter = 0;
 deque<unsigned long long> de;
 map<string, int> typeIndex;
 RegisterFile *reg;
@@ -1553,16 +1554,19 @@ void FLoad_funct3(string instruction) {
     string funct3 = instruction.substr(17, 3);
     int tempInt = stoi(funct3);
     if (tempInt == 10) {
-        float loadData;
-        //*((unsigned int *)loadData) = mymem.rwmemReadWord(immediateNum +
-        // rs1Val);
-        *((unsigned int *)&loadData) = (ULL)memory[immediateNum + rs1Val];
-        reg->setFloatRegVal(loadData, rdInt);
+        union{
+            float fl;
+            unsigned int ui;
+        }loadData;
+        loadData.ui = (unsigned int)((ULL)memory[immediateNum + rs1Val]);
+        reg->setFloatRegVal(loadData.fl, rdInt);
     } else if (tempInt == 11) {
-        double LoadData;
-        //*((ULL *)LoadData) = mymem.rwmemReadDword(immediateNum + rs1Val);
-        *((ULL *)&LoadData) = memory[immediateNum + rs1Val];
-        reg->setFloatRegVal(LoadData, rdInt);
+        union{
+            double db;
+            unsigned long long dword;
+        }loadData;
+        loadData.dword = memory[immediateNum + rs1Val];
+        reg->setFloatRegVal(loadData.db, rdInt);
     } else {
         cerr << "Error when parsing instruction: " << instruction << endl;
         cerr << "float load funct3 error!" << endl;
@@ -1585,13 +1589,21 @@ void FStore_funct3(string instruction) {
     string funct3 = instruction.substr(17, 3);
     int tempInt = stoi(funct3);
     if (tempInt == 10) {
-        float rs2Val = reg->getFloatRegVal(rs2Int);
+        union{
+            float fl;
+            unsigned int ui;
+        }rs2Val;
+        rs2Val.fl = reg->getFloatRegVal(rs2Int);
         // mymem.rwmemWriteWord(*((unsigned int *)(&rs2Val)), memoryAddr);
-        memoryWrite(memoryAddr, *((unsigned int*)&rs2Val), 4);
+        memoryWrite(memoryAddr, rs2Val.ui, 4);
     } else if (tempInt == 11) {
-        double rs2val = reg->getFloatRegVal(rs2Int);
+        union{
+            double db;
+            unsigned long long dword;
+        }rs2Val;
+        rs2Val.db = reg->getFloatRegVal(rs2Int);
         // mymem.rwmemWriteDword(*((ULL *)(&rs2val)), memoryAddr);
-        memoryWrite(memoryAddr, *((ULL*)&rs2val), 8);
+        memoryWrite(memoryAddr, rs2Val.dword, 8);
     } else {
         cerr << "Error when parsing instruction: " << instruction << endl;
         cerr << "float load funct3 error!" << endl;
@@ -1854,7 +1866,10 @@ void decode(ULL startAddr, bool enable_debug) {
     bool flag = false;
     debuger mydb = debuger(memory, reg);
     while (true) {
-        if (enable_debug) mydb.wait();
+        if (enable_debug){ 
+			mydb.wait();
+			ins_counter++;
+		}
         memset(tempChar, 0, sizeof(tempChar));
 
         // cout << "PC: " << reg->getPC() << endl;
