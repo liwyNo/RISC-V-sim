@@ -173,7 +173,6 @@ int main(int argc, char** argv) {
 
     delete elf_buffer;
 
-    void decode(unsigned long long, bool);
-    decode(entry, enable_debug);
-    return 0;
+    int decode(unsigned long long, bool);
+    return decode(entry, enable_debug);
 }

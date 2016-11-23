@@ -14,10 +14,13 @@
 extern unsigned long long sbrk_point;
 extern VM memory;
 extern long long ins_counter;
+extern bool is_exit;
+extern int exit_code;
 using ULL = unsigned long long;
 void sys_exit(int code) { 
 	printf("Total instruction: %lld", ins_counter);
-	exit(code); 
+	is_exit = true;
+    exit_code = code;
 }
 ssize_t sys_read(int fd, ULL buf, ssize_t n) {
     char* p_buf = new char[n + 1];

@@ -95,39 +95,16 @@ struct VM {
 };
 struct block {
     unsigned long long offset;
+    unsigned long long content;
     VM* vm;
     block(unsigned long long _offset, VM* _vm) : offset(_offset), vm(_vm) {}
     operator unsigned long long() {
-        union {
-            unsigned char byte[8];
-            unsigned long long dword;
-        } tmp;
-        //vm->exist(offset & TAG_MASK);
-        //vm->exist((offset + sizeof(unsigned long long)) & TAG_MASK);
-        for (int i = 0; i < 8; ++i) {
-            auto now_off = offset + i;
-            auto tag = now_off & TAG_MASK;
-            now_off &= PAGE_MASK;
-            auto base = vm->exist(tag);
-            tmp.byte[i] = base[now_off];
-        }
-        return tmp.dword;
+        vm->store((char*)&content, offset, 8);
+        return content;
     }
     block& operator=(const unsigned long long content) {
-        union {
-            unsigned char byte[8];
-            unsigned long long dword;
-        } tmp;
-        tmp.dword = content;
-        //vm->exist(offset & TAG_MASK);
-        //vm->exist((offset + sizeof(unsigned long long)) & TAG_MASK);
-        for (int i = 0; i < 8; ++i) {
-            auto now_off = offset + i;
-            auto tag = now_off & TAG_MASK;
-            now_off &= PAGE_MASK;
-            auto base = vm->exist(tag);
-            base[now_off] = tmp.byte[i];
-        }
+        this->content = content;
+        vm->load((char*)&(this->content), offset, 8);
         return *this;
     }
 };

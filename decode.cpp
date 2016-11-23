@@ -1,7 +1,6 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include <deque>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -10,12 +9,14 @@
 #include "syscall.h"
 #include "vmm.h"
 using namespace std;
-
+#define MASK(x) ((1ULL << x) - 1)
+#define SUBINT(x,y,z) (((x) >> (y)) & MASK((z)))
 long long ins_counter = 0;
-deque<unsigned long long> de;
 map<string, int> typeIndex;
 RegisterFile *reg;
 extern VM memory;
+bool is_exit = false;
+int exit_code = 0;
 int content;  // the integer value of one instruction
 bool canjump = false;
 inline void memoryWrite(ULL offset, ULL value, unsigned char bit) {
@@ -28,31 +29,7 @@ inline void memoryWrite(ULL offset, ULL value, unsigned char bit) {
 // Initialize the map index and register file
 inline void Initialize(ULL startAddr) {
     reg->setPC(startAddr);
-
     content = 0;
-    /*
-    R-TYPE:1; I-TYPE:2; S-TYPE:3; SB-TYPE:4; UJ-TYPE:5; U-TYPE:6; SYS-TYPE:7;
-     */
-
-    typeIndex.insert(pair<string, int>("0110011", 1));
-    typeIndex.insert(pair<string, int>("0010011", 2));
-    typeIndex.insert(pair<string, int>("0100011", 3));
-    typeIndex.insert(pair<string, int>("0000011", 2));
-    typeIndex.insert(pair<string, int>("1100011", 4));
-    typeIndex.insert(pair<string, int>("1100111", 2));
-    typeIndex.insert(pair<string, int>("1101111", 5));
-    typeIndex.insert(pair<string, int>("0010111", 6));
-    typeIndex.insert(pair<string, int>("0110111", 6));
-    typeIndex.insert(pair<string, int>("0111011", 1));
-    typeIndex.insert(pair<string, int>("0011011", 2));
-    typeIndex.insert(pair<string, int>("1110011", 7));
-    typeIndex.insert(pair<string, int>("0000111", 8));
-    typeIndex.insert(pair<string, int>("0100111", 9));
-    typeIndex.insert(pair<string, int>("1000011", 10));
-    typeIndex.insert(pair<string, int>("1000111", 11));
-    typeIndex.insert(pair<string, int>("1001011", 12));
-    typeIndex.insert(pair<string, int>("1001111", 13));
-    typeIndex.insert(pair<string, int>("1010011", 14));
 }
 
 /*
@@ -122,9 +99,10 @@ inline void addw(ULL rs1Val, ULL rs2Val, int rdInt) {
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
 inline void sllw(ULL rs1Val, ULL rs2Val, int rdInt) {
-    rs2Val = rs2Val & 31;
+    int shamt = rs2Val & 31;
     int src = rs1Val;
-    LL rdVal = src << rs2Val;
+    src <<= shamt;
+    LL rdVal = src;
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
 inline void srlw(ULL rs1Val, ULL rs2Val, int rdInt) {
@@ -141,13 +119,14 @@ inline void subw(ULL rs1Val, ULL rs2Val, int rdInt) {
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
 inline void sraw(ULL rs1Val, ULL rs2Val, int rdInt) {
-    rs2Val = rs2Val & 31;
+    int shamt = rs2Val & 31;
     int src = rs1Val;
-    LL rdVal = src >> rs2Val;
+    src >>= shamt;
+    LL rdVal = src;
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
 
-inline void R_TYPE_funct3_1(string & instruction) {
+inline void R_TYPE_funct3_1() {
     // aLL R-TYPE instructions have the same part
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
@@ -157,23 +136,23 @@ inline void R_TYPE_funct3_1(string & instruction) {
     ULL rs2Val = reg->getIntRegVal(rs2Int);
     // common part ends hiere
 
-    string funct3 = instruction.substr(17, 3);
-    switch (stoi(funct3)) {
-        case 000:
+    int funct3 = SUBINT(content, 12, 3);
+    switch (funct3) {
+        case 0:
             sub(rs1Val, rs2Val, rdInt);
             break;
-        case 101:
+        case 0B101:
             sra(rs1Val, rs2Val, rdInt);
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "R-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
             return;
     }
 }
-inline void R_TYPE_funct3_2(string & instruction) {
+inline void R_TYPE_funct3_2() {
     // aLL R-TYPE instructions have the same part
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
@@ -183,148 +162,148 @@ inline void R_TYPE_funct3_2(string & instruction) {
     ULL rs2Val = reg->getIntRegVal(rs2Int);
     // common part ends here
 
-    string funct3 = instruction.substr(17, 3);
-    switch (stoi(funct3)) {
-        case 000:
+    int funct3 = SUBINT(content, 12, 3);
+    switch (funct3) {
+        case 0:
             add(rs1Val, rs2Val, rdInt);
             break;
         case 1:
             sll(rs1Val, rs2Val, rdInt);
             break;
-        case 10:
+        case 0B10:
             slt(rs1Val, rs2Val, rdInt);
             break;
-        case 11:
+        case 0B11:
             sltu(rs1Val, rs2Val, rdInt);
             break;
-        case 100:
+        case 0B100:
             _xor(rs1Val, rs2Val, rdInt);
             break;
-        case 101:
+        case 0B101:
             srl(rs1Val, rs2Val, rdInt);
             break;
-        case 110:
+        case 0B110:
             _or(rs1Val, rs2Val, rdInt);
             break;
-        case 111:
+        case 0B111:
             _and(rs1Val, rs2Val, rdInt);
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "R-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
             return;
     }
 }
-inline void R_TYPE_funct3_3(string & instruction) {
+inline void R_TYPE_funct3_3() {
     // aLL R-TYPE instructions have the same part
-    int rs1Val = (content >> 15) & 31;
-    int rs2Val = (content >> 20) & 31;
+    int rs1Int = (content >> 15) & 31;
+    int rs2Int = (content >> 20) & 31;
     int rdInt = (content >> 7) & 31;
 
-    rs1Val = reg->getIntRegVal(rs1Val);
-    rs2Val = reg->getIntRegVal(rs2Val);
+    ULL rs1Val = reg->getIntRegVal(rs1Int);
+    ULL rs2Val = reg->getIntRegVal(rs2Int);
     // common part ends here
 
-    string funct3 = instruction.substr(17, 3);
-    switch (stoi(funct3)) {
-        case 000:
+    int funct3 = SUBINT(content, 12, 3);
+    switch (funct3) {
+        case 0:
             subw(rs1Val, rs2Val, rdInt);
             break;
-        case 101:
+        case 0B101:
             sraw(rs1Val, rs2Val, rdInt);
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "R-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
             return;
     }
 }
-inline void R_TYPE_funct3_4(string & instruction) {
+inline void R_TYPE_funct3_4() {
     // aLL R-TYPE instructions have the same part
-    int rs1Val = (content >> 15) & 31;
-    int rs2Val = (content >> 20) & 31;
+    int rs1Int = (content >> 15) & 31;
+    int rs2Int = (content >> 20) & 31;
     int rdInt = (content >> 7) & 31;
 
-    rs1Val = reg->getIntRegVal(rs1Val);
-    rs2Val = reg->getIntRegVal(rs2Val);
+    ULL rs1Val = reg->getIntRegVal(rs1Int);
+    ULL rs2Val = reg->getIntRegVal(rs2Int);
     // common part ends here
 
-    string funct3 = instruction.substr(17, 3);
-    switch (stoi(funct3)) {
+    int funct3 = SUBINT(content, 12, 3);
+    switch (funct3) {
         case 0:
             addw(rs1Val, rs2Val, rdInt);
             break;
-        case 101:
+        case 0B101:
             srlw(rs1Val, rs2Val, rdInt);
             break;
-        case 1:
+        case 0B1:
             sllw(rs1Val, rs2Val, rdInt);
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "R-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
             return;
     }
 }
-inline void R_TYPE_funct7_1(string & instruction) {
-    string funct7 = instruction.substr(0, 7);
-    switch (stoi(funct7)) {
-        case 100000:
-            R_TYPE_funct3_1(instruction);
+inline void R_TYPE_funct7_1() {
+    int funct7 = SUBINT(content, 25, 7);
+    switch (funct7) {
+        case 0B100000:
+            R_TYPE_funct3_1();
             break;
-        case 0000000:
-            R_TYPE_funct3_2(instruction);
+        case 0B000000:
+            R_TYPE_funct3_2();
             break;
         case 1:
-            void M_TYPE_funct3_1(string & instruction);
-            M_TYPE_funct3_1(instruction);
+            void M_TYPE_funct3_1();
+            M_TYPE_funct3_1();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "R-TYPE funct7 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
             return;
     }
 }
-inline void R_TYPE_funct7_2(string & instruction) {
-    string funct7 = instruction.substr(0, 7);
-    switch (stoi(funct7)) {
-        case 100000:
-            R_TYPE_funct3_3(instruction);
+inline void R_TYPE_funct7_2() {
+    int funct7 = SUBINT(content, 25, 7);
+    switch (funct7) {
+        case 0B100000:
+            R_TYPE_funct3_3();
             break;
-        case 0000000:
-            R_TYPE_funct3_4(instruction);
+        case 0B0000000:
+            R_TYPE_funct3_4();
             break;
         case 1:
-            void M_TYPE_funct3_2(string & instruction);
-            M_TYPE_funct3_2(instruction);
+            void M_TYPE_funct3_2();
+            M_TYPE_funct3_2();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "R-TYPE funct7 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
             return;
     }
 }
-inline void R_TYPE_opcode(string & instruction) {
-    string opcode = instruction.substr(25, 7);
-    switch (stoi(opcode)) {
-        case 110011:
-            R_TYPE_funct7_1(instruction);
+inline void R_TYPE_opcode() {
+    int opcode = SUBINT(content, 0, 7);
+    switch (opcode) {
+        case 0B110011:
+            R_TYPE_funct7_1();
             break;
-        case 111011:
-            R_TYPE_funct7_2(instruction);
+        case 0B111011:
+            R_TYPE_funct7_2();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "R-TYPE opcode error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
@@ -342,7 +321,7 @@ End R-TYPE decode
 This part finishes the decode part of I-TYPE and lists aLL the I-TYPE
 instructions
  */
-inline void slli(string & instruction) {
+inline void slli() {
     LL shamt = (content >> 20) & 63;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -351,7 +330,7 @@ inline void slli(string & instruction) {
     LL rdVal = rs1Val << shamt;
     reg->setIntRegVal(rdVal, rdInt);
 }
-inline void srli(string & instruction) {
+inline void srli() {
     LL shamt = (content >> 20) & 63;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -360,7 +339,7 @@ inline void srli(string & instruction) {
     ULL rdVal = rs1Val >> shamt;
     reg->setIntRegVal(rdVal, rdInt);
 }
-inline void srai(string & instruction) {
+inline void srai() {
     LL shamt = (content >> 20) & 63;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -369,7 +348,7 @@ inline void srai(string & instruction) {
     LL rdVal = rs1Val >> shamt;
     reg->setIntRegVal(rdVal, rdInt);
 }
-inline void addi(string & instruction) {
+inline void addi() {
     LL immediateNum = (LL)(content >> 20);
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -378,7 +357,7 @@ inline void addi(string & instruction) {
     LL rdVal = rs1Val + immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
 }
-inline void slti(string & instruction) {
+inline void slti() {
     LL immediateNum = (LL)(content >> 20);
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -390,7 +369,7 @@ inline void slti(string & instruction) {
 }
 // the immediate is first sign-extended to XLEN bits then treated as an unsigned
 // number
-inline void sltiu(string & instruction) {
+inline void sltiu() {
     ULL immediateNum = (ULL)((LL)(content >> 20));  // the immediate is first
                                                     // sign-extended to XLEN
                                                     // bits then treated as an
@@ -403,7 +382,7 @@ inline void sltiu(string & instruction) {
     if (rs1Val < immediateNum) rdVal = 1;
     reg->setIntRegVal(rdVal, rdInt);
 }
-inline void xori(string & instruction) {
+inline void xori() {
     LL immediateNum = (LL)(content >> 20);
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -412,7 +391,7 @@ inline void xori(string & instruction) {
     LL rdVal = rs1Val ^ immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
 }
-inline void ori(string & instruction) {
+inline void ori() {
     LL immediateNum = (LL)(content >> 20);
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -421,7 +400,7 @@ inline void ori(string & instruction) {
     LL rdVal = rs1Val | immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
 }
-inline void andi(string & instruction) {
+inline void andi() {
     LL immediateNum = (LL)(content >> 20);
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -430,7 +409,7 @@ inline void andi(string & instruction) {
     LL rdVal = rs1Val & immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
 }
-inline void lb(string & instruction) {
+inline void lb() {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = (LL)content >> 20;
@@ -440,7 +419,7 @@ inline void lb(string & instruction) {
     loadData = (loadData << 56) >> 56;  // return value can be sign-extended
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-inline void lh(string & instruction) {
+inline void lh() {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = (LL)content >> 20;
@@ -450,7 +429,7 @@ inline void lh(string & instruction) {
     loadData = (loadData << 48) >> 48;  // same as the reason mentioned above
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-inline void lw(string & instruction) {
+inline void lw() {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = (LL)content >> 20;
@@ -461,7 +440,7 @@ inline void lw(string & instruction) {
     loadData = (loadData << 32) >> 32;
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-inline void ld(string & instruction) {
+inline void ld() {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = (LL)content >> 20;
@@ -471,7 +450,7 @@ inline void ld(string & instruction) {
 
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-inline void lbu(string & instruction) {
+inline void lbu() {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = content >> 20;
@@ -481,7 +460,7 @@ inline void lbu(string & instruction) {
     loadData = loadData & 255;
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-inline void lhu(string & instruction) {
+inline void lhu() {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = content >> 20;
@@ -491,18 +470,18 @@ inline void lhu(string & instruction) {
     loadData = loadData & 65535;
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-inline void lwu(string & instruction) {
+inline void lwu() {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = content >> 20;
 
     LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
     ULL loadData = memory[(ULL)(immediateNum + rs1Val)];
-    long long mask = (1LL << 63) >> 31;
-    loadData = loadData & (~mask);
+    long long mask = (1LL << 32) - 1;
+    loadData = loadData & mask;
     reg->setIntRegVal((ULL)loadData, rdInt);
 }
-inline void jalr(string & instruction) {
+inline void jalr() {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = content >> 20;
@@ -512,7 +491,7 @@ inline void jalr(string & instruction) {
     canjump = true;
     reg->setPC((ULL)(((rs1Val + immediateNum) >> 1) << 1));
 }
-inline void addiw(string & instruction) {
+inline void addiw() {
     int immediateNum = content >> 20;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -521,7 +500,7 @@ inline void addiw(string & instruction) {
     LL rdVal = (LL)rs1Val;
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-inline void slliw(string & instruction) {
+inline void slliw() {
     int shamt = (content >> 20) & 31;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -530,7 +509,7 @@ inline void slliw(string & instruction) {
     LL rdVal = (LL)(rs1Val << shamt);
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-inline void srliw(string & instruction) {
+inline void srliw() {
     /*
     operate on 32-bit values and produce signed 32-bit results.
      */
@@ -543,7 +522,7 @@ inline void srliw(string & instruction) {
     LL rdVal = (LL)((int)rs1Val);
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-inline void sraiw(string & instruction) {
+inline void sraiw() {
     int shamt = (content >> 20) & 31;
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
@@ -553,128 +532,128 @@ inline void sraiw(string & instruction) {
     LL rdVal = (LL)rs1Val;
     reg->setIntRegVal((ULL)rdVal, rdInt);
 }
-inline void I_TYPE_funct3_1(string & instruction) {
-    string funct3 = instruction.substr(17, 3);
+inline void I_TYPE_funct3_1() {
+    int funct3 = SUBINT(content, 12, 3);
 
-    switch (stoi(funct3)) {
+    switch (funct3) {
         case 1:
-            slli(instruction);
+            slli();
             break;
-        case 101: {
-            string funct7 = instruction.substr(0, 6);
-            switch (stoi(funct7)) {
+        case 0B101: {
+            int funct7 = SUBINT(content, 26, 6);
+            switch (funct7) {
                 case 0:
-                    srli(instruction);
+                    srli();
                     break;
-                case 10000:
-                    srai(instruction);
+                case 0B10000:
+                    srai();
                     break;
             }
         } break;
         case 0:
-            addi(instruction);
+            addi();
             break;
-        case 10:
-            slti(instruction);
+        case 0B10:
+            slti();
             break;
-        case 11:
-            sltiu(instruction);
+        case 0B11:
+            sltiu();
             break;
-        case 100:
-            xori(instruction);
+        case 0B100:
+            xori();
             break;
-        case 110:
-            ori(instruction);
+        case 0B110:
+            ori();
             break;
-        case 111:
-            andi(instruction);
+        case 0B111:
+            andi();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "I-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
             return;
     }
 }
-inline void I_TYPE_funct3_2(string & instruction) {
-    string funct3 = instruction.substr(17, 3);
+inline void I_TYPE_funct3_2() {
+    int funct3 = SUBINT(content, 12, 3);
 
-    switch (stoi(funct3)) {
+    switch (funct3) {
         case 000:
-            lb(instruction);
+            lb();
             break;
-        case 1:
-            lh(instruction);
+        case 0B1:
+            lh();
             break;
-        case 10:
-            lw(instruction);
+        case 0B10:
+            lw();
             break;
-        case 100:
-            lbu(instruction);
+        case 0B100:
+            lbu();
             break;
-        case 101:
-            lhu(instruction);
+        case 0B101:
+            lhu();
             break;
-        case 110:
-            lwu(instruction);
+        case 0B110:
+            lwu();
             break;
-        case 11:
-            ld(instruction);
+        case 0B11:
+            ld();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "I-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
             return;
     }
 }
-inline void I_TYPE_funct3_3(string & instruction) {
-    string funct3 = instruction.substr(17, 3);
-    switch (stoi(funct3)) {
+inline void I_TYPE_funct3_3() {
+    int funct3 = SUBINT(content, 12, 3);
+    switch (funct3) {
         case 0:
-            addiw(instruction);
+            addiw();
             break;
-        case 1:
-            slliw(instruction);
+        case 0B1:
+            slliw();
             break;
-        case 101: {
-            string funct7 = instruction.substr(0, 6);
-            switch (stoi(funct7)) {
+        case 0B101: {
+            int funct7 = SUBINT(content, 26, 6);
+            switch (funct7) {
                 case 0:
-                    srliw(instruction);
+                    srliw();
                     break;
-                case 10000:
-                    sraiw(instruction);
+                case 0B10000:
+                    sraiw();
                     break;
             }
         } break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "I-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
             return;
     }
 }
-inline void I_TYPE_opcode(string & instruction) {
-    string opcode = instruction.substr(25, 7);
-    switch (stoi(opcode)) {
-        case 10011:
-            I_TYPE_funct3_1(instruction);
+inline void I_TYPE_opcode() {
+    int opcode = SUBINT(content, 0, 7);
+    switch (opcode) {
+        case 0B10011:
+            I_TYPE_funct3_1();
             break;
-        case 11:
-            I_TYPE_funct3_2(instruction);
+        case 0B11:
+            I_TYPE_funct3_2();
             break;
-        case 11011:
-            I_TYPE_funct3_3(instruction);
+        case 0B11011:
+            I_TYPE_funct3_3();
             break;
-        case 1100111:
-            jalr(instruction);
+        case 0B1100111:
+            jalr();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "I-TYPE opcode error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
@@ -692,7 +671,7 @@ End I-TYPE decode
 This part finishes the decode part of S-TYPE and lists aLL the S-TYPE
 instructions
  */
-inline void sb(string & instruction) {
+inline void sb() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     LL immediateLowerPart = (LL)(content >> 7) & 31;
@@ -707,7 +686,7 @@ inline void sb(string & instruction) {
 
     memoryWrite((ULL)memoryAddr, rs2Val, 1);
 }
-inline void sh(string & instruction) {
+inline void sh() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     LL immediateLowerPart = (LL)(content >> 7) & 31;
@@ -722,7 +701,7 @@ inline void sh(string & instruction) {
 
     memoryWrite((ULL)memoryAddr, rs2Val, 2);
 }
-inline void sw(string & instruction) {
+inline void sw() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     LL immediateLowerPart = (LL)(content >> 7) & 31;
@@ -733,12 +712,12 @@ inline void sw(string & instruction) {
     LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
     LL memoryAddr = immediateNum + rs1Val;
     ULL rs2Val = reg->getIntRegVal(rs2Int);
-    long long mask = (1LL << 63) >> 31;
-    rs2Val &= (~mask);
+    long long mask = (1LL << 32) - 1;
+    rs2Val &= mask;
 
     memoryWrite(memoryAddr, rs2Val, 4);
 }
-inline void sd(string & instruction) {
+inline void sd() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     LL immediateLowerPart = (LL)(content >> 7) & 31;
@@ -752,23 +731,23 @@ inline void sd(string & instruction) {
 
     memoryWrite(memoryAddr, rs2Val, 8);
 }
-inline void S_TYPE_funct3(string & instruction) {
-    string funct3 = instruction.substr(17, 3);
-    switch (stoi(funct3)) {
+inline void S_TYPE_funct3() {
+    int funct3 = SUBINT(content, 12, 3);
+    switch (funct3) {
         case 0:
-            sb(instruction);
+            sb();
             break;
         case 1:
-            sh(instruction);
+            sh();
             break;
-        case 10:
-            sw(instruction);
+        case 0B10:
+            sw();
             break;
-        case 11:
-            sd(instruction);
+        case 0B11:
+            sd();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "S-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
@@ -786,7 +765,7 @@ End S-TYPE decode
 This part finishes the decode part of SB-TYPE and lists aLL the SB-TYPE
 instructions
  */
-inline void beq(string & instruction) {
+inline void beq() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -805,7 +784,7 @@ inline void beq(string & instruction) {
         reg->changePC(immediateNum);
     }
 }
-inline void bne(string & instruction) {
+inline void bne() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -824,7 +803,7 @@ inline void bne(string & instruction) {
         reg->changePC(immediateNum);
     }
 }
-inline void blt(string & instruction) {
+inline void blt() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -843,7 +822,7 @@ inline void blt(string & instruction) {
         reg->changePC(immediateNum);
     }
 }
-inline void bge(string & instruction) {
+inline void bge() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -862,7 +841,7 @@ inline void bge(string & instruction) {
         reg->changePC(immediateNum);
     }
 }
-inline void bltu(string & instruction) {
+inline void bltu() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -881,7 +860,7 @@ inline void bltu(string & instruction) {
         reg->changePC(immediateNum);
     }
 }
-inline void bgeu(string & instruction) {
+inline void bgeu() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     ULL rs1Val = reg->getIntRegVal(rs1Int);
@@ -900,29 +879,29 @@ inline void bgeu(string & instruction) {
         reg->changePC(immediateNum);
     }
 }
-inline void SB_TYPE_funct3(string & instruction) {
-    string funct3 = instruction.substr(17, 3);
-    switch (stoi(funct3)) {
+inline void SB_TYPE_funct3() {
+    int funct3 = SUBINT(content, 12, 3);
+    switch (funct3) {
         case 0:
-            beq(instruction);
+            beq();
             break;
         case 1:
-            bne(instruction);
+            bne();
             break;
-        case 100:
-            blt(instruction);
+        case 0B100:
+            blt();
             break;
-        case 101:
-            bge(instruction);
+        case 0B101:
+            bge();
             break;
-        case 110:
-            bltu(instruction);
+        case 0B110:
+            bltu();
             break;
-        case 111:
-            bgeu(instruction);
+        case 0B111:
+            bgeu();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "SB-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
@@ -940,7 +919,7 @@ End SB-TYPE decode
 This part finishes the decode part of SB-TYPE and lists aLL the SB-TYPE
 instructions
  */
-inline void lui(string & instruction) {
+inline void lui() {
     int rdInt = (content >> 7) & 31;
     LL immediateNum =
         (LL)((content >> 12)
@@ -948,7 +927,7 @@ inline void lui(string & instruction) {
 
     reg->setIntRegVal((ULL)immediateNum, rdInt);
 }
-inline void auipc(string & instruction) {
+inline void auipc() {
     int rdInt = (content >> 7) & 31;
     LL immediateNum =
         (LL)((content >> 12)
@@ -957,17 +936,17 @@ inline void auipc(string & instruction) {
     ULL rdVal = reg->getPC() + (ULL)immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
 }
-inline void U_TYPE_opcode(string & instruction) {
-    string opcode = instruction.substr(25, 7);
-    switch (stoi(opcode)) {
-        case 110111:
-            lui(instruction);
+inline void U_TYPE_opcode() {
+    int opcode = SUBINT(content, 0, 7);
+    switch (opcode) {
+        case 0B110111:
+            lui();
             break;
-        case 10111:
-            auipc(instruction);
+        case 0B10111:
+            auipc();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "U-TYPE opcode error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
@@ -985,7 +964,7 @@ End SB-TYPE decode
 This part finishes the decode part of UJ-TYPE and lists aLL the UJ-TYPE
 instructions
  */
-inline void jal(string & instruction) {
+inline void jal() {
     int rdInt = (content >> 7) & 31;
     LL immediateNum_1 = ((content >> 31) & 1) << 19;
     LL immediateNum_2 = ((content >> 12) & 255) << 11;
@@ -1021,10 +1000,10 @@ inline void ecall() {
     ULL rval = systemCall((int)sys_call_num, a0, a1, a2, a3);
     reg->setIntRegVal(rval, 10);
 }
-inline void ebreak() {}
-inline void E_INS(string & instruction) {
-    string diffPart = instruction.substr(11, 1);
-    switch (stoi(diffPart)) {
+inline void ebreak() {assert(false);}
+inline void E_INS() {
+    int diffPart = SUBINT(content, 20, 1);
+    switch (diffPart) {
         case 0:
             ecall();
             break;
@@ -1033,14 +1012,14 @@ inline void E_INS(string & instruction) {
             break;
     }
 }
-inline void SYS_INSTRUCTION(string & instruction) {
-    string funct3 = instruction.substr(17, 3);
-    switch (stoi(funct3)) {
+inline void SYS_INSTRUCTION() {
+    int funct3 = SUBINT(content, 12, 3);
+    switch (funct3) {
         case 0:
-            E_INS(instruction);
+            E_INS();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "SYS-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
@@ -1059,22 +1038,11 @@ This part finishes the decode part of M-TYPE and lists aLL the M-TYPE
 instructions
  */
 inline void MUL(LL rs1Val, LL rs2Val, int rdInt) {
-    LL rdVal;
-    __asm__ __volatile__(
-        "pushq %%rax\n\t"
-        "pushq %%rdx\n\t"
-        "movq %1, %%rax\n\t"
-        "imulq %2\n\t"
-        "movq %%rax, %0\n\t"
-        "popq %%rdx\n\t"
-        "popq %%rax\n\t"
-        : "=m"(rdVal)
-        : "r"(rs1Val), "r"(rs2Val));
-    reg->setIntRegVal(rdVal, rdInt);
+    reg->setIntRegVal(rs1Val * rs2Val, rdInt);
 }
 inline void MULH(LL rs1Val, LL rs2Val, int rdInt) {
     LL rdVal;
-    __asm__ __volatile__(
+    __asm__(
         "pushq %%rax\n\t"
         "pushq %%rdx\n\t"
         "movq %1, %%rax\n\t"
@@ -1087,22 +1055,26 @@ inline void MULH(LL rs1Val, LL rs2Val, int rdInt) {
     reg->setIntRegVal(rdVal, rdInt);
 }
 inline void MULHSU(LL rs1Val, ULL rs2Val, int rdInt) {
-    LL rdVal;
-    __asm__ __volatile__(
+    ULL rdVal;
+    ULL sign = rs1Val & (1ULL << 63);
+    rs1Val &= MASK(63);
+    __asm__ (
         "pushq %%rax\n\t"
         "pushq %%rdx\n\t"
         "movq %1, %%rax\n\t"
-        "imulq %2\n\t"
-        "movq %%rax, %0\n\t"
+        "mulq %2\n\t"
+        "movq %%rdx, %0\n\t"
         "popq %%rdx\n\t"
         "popq %%rax\n\t"
         : "=m"(rdVal)
         : "r"(rs1Val), "r"(rs2Val));
+    rdVal &= MASK(63);
+    rdVal |= sign;
     reg->setIntRegVal(rdVal, rdInt);
 }
 inline void MULHU(ULL rs1Val, ULL rs2Val, int rdInt) {
     ULL rdVal;
-    __asm__ __volatile__(
+    __asm__(
         "pushq %%rax\n\t"
         "pushq %%rdx\n\t"
         "movq %1, %%rax\n\t"
@@ -1115,152 +1087,52 @@ inline void MULHU(ULL rs1Val, ULL rs2Val, int rdInt) {
     reg->setIntRegVal(rdVal, rdInt);
 }
 inline void DIV(LL rs1Val, LL rs2Val, int rdInt) {
-    LL rdVal;
-    if (rs2Val == 0) {
-        reg->setIntRegVal(-1, rdInt);
-        return;
-    }
-    if (((rs1Val ^ 0x8000000000000000LL) == 0) && (rs2Val == -1)) {
-        reg->setIntRegVal(rs1Val, rdInt);
-        return;
-    }
-    __asm__ __volatile__(
-        "pushq %%rax\n\t"
-        "pushq %%rdx\n\t"
-        "movq %1, %%rdx\n\t"
-        "sarq $63, %%rdx\n\t"
-        "idivq %2\n\t"
-        "movq %%rax, %0\n\t"
-        "popq %%rdx\n\t"
-        "popq %%rax\n\t"
-        : "=m"(rdVal)
-        : "r"(rs1Val), "m"(rs2Val));
-    reg->setIntRegVal(rdVal, rdInt);
+    assert(rs2Val);
+    reg->setIntRegVal(rs1Val / rs2Val, rdInt);
 }
 inline void DIVU(ULL rs1Val, ULL rs2Val, int rdInt) {
-    ULL rdVal;
-    if (rs2Val == 0) {
-        reg->setIntRegVal(0x7fffffffffffffff, rdInt);
-        return;
-    }
-    __asm__ __volatile__(
-        "pushq %%rax\n\t"
-        "pushq %%rdx\n\t"
-        "movq %1, %%rdx\n\t"
-        "shrq $63, %%rdx\n\t"
-        "divq %2\n\t"
-        "movq %%rax, %0\n\t"
-        "popq %%rdx\n\t"
-        "popq %%rax\n\t"
-        : "=m"(rdVal)
-        : "r"(rs1Val), "m"(rs2Val));
-    reg->setIntRegVal(rdVal, rdInt);
+    assert(rs2Val);
+    reg->setIntRegVal(rs1Val / rs2Val, rdInt);
 }
 inline void REM(LL rs1Val, LL rs2Val, int rdInt) {
-    LL rdVal;
-    if (rs2Val == 0) {
-        reg->setIntRegVal(rs1Val, rdInt);
-        return;
-    }
-    if (((rs1Val ^ 0x8000000000000000LL) == 0) && (rs2Val == -1)) {
-        reg->setIntRegVal(0, rdInt);
-        return;
-    }
-    __asm__ __volatile__(
-        "pushq %%rax\n\t"
-        "pushq %%rdx\n\t"
-        "movq %1, %%rdx\n\t"
-        "sarq $63, %%rdx\n\t"
-        "idivq %2\n\t"
-        "movq %%rdx, %0\n\t"
-        "popq %%rdx\n\t"
-        "popq %%rax\n\t"
-        : "=m"(rdVal)
-        : "r"(rs1Val), "m"(rs2Val));
-    reg->setIntRegVal(rdVal, rdInt);
+    assert(rs2Val);
+    reg->setIntRegVal(rs1Val % rs2Val, rdInt);
 }
 inline void REMU(ULL rs1Val, ULL rs2Val, int rdInt) {
-    ULL rdVal;
-    if (rs2Val == 0) {
-        reg->setIntRegVal(rs1Val, rdInt);
-        return;
-    }
-    __asm__ __volatile__(
-        "pushq %%rax\n\t"
-        "pushq %%rdx\n\t"
-        "movq %1, %%rdx\n\t"
-        "shrq $63, %%rdx\n\t"
-        "divq %2\n\t"
-        "movq %%rdx, %0\n\t"
-        "popq %%rdx\n\t"
-        "popq %%rax\n\t"
-        : "=m"(rdVal)
-        : "r"(rs1Val), "m"(rs2Val));
-    reg->setIntRegVal(rdVal, rdInt);
+    assert(rs2Val);
+    reg->setIntRegVal(rs1Val % rs2Val, rdInt);
 }
 inline void MULW(LL rs1Val, LL rs2Val, int rdInt) {
-    LL rdVal;
-    __asm__ __volatile__(
-        "pushq %%rax\n\t"
-        "pushq %%rbx\n\t"
-        "pushq %%rdx\n\t"
-        "movq %1, %%rax\n\t"
-        "movq %2, %%rbx\n\t"
-        "imull %%ebx, %%eax\n\t"
-        "movq %%rax, %0\n\t"
-        "popq %%rdx\n\t"
-        "popq %%rbx\n\t"
-        "popq %%rax\n\t"
-        : "=m"(rdVal)
-        : "m"(rs1Val), "m"(rs2Val));
-    reg->setIntRegVal(rdVal, rdInt);
+    int rs1 = rs1Val;
+    int rs2 = rs2Val;
+    reg->setIntRegVal((LL)(rs1 * rs2), rdInt);
 }
 inline void DIVW(LL rs1Val, LL rs2Val, int rdInt) {
-    LL rdVal;
-    if (rs2Val == 0) {
-        reg->setIntRegVal(-1, rdInt);
-        return;
-    }
+    assert(rs2Val);
     int rs1 = rs1Val;
     int rs2 = rs2Val;
-    rdVal = (LL)(rs1 / rs2);
-    reg->setIntRegVal(rdVal, rdInt);
+    reg->setIntRegVal((LL)(rs1 / rs2), rdInt);
 }
 inline void DIVUW(ULL rs1Val, ULL rs2Val, int rdInt) {
-    ULL rdVal;
-    if (rs2Val == 0) {
-        reg->setIntRegVal(0x7fffffffffffffff, rdInt);
-        return;
-    }
+    assert(rs2Val);
     unsigned int rs1 = rs1Val;
     unsigned int rs2 = rs2Val;
-    rdVal = (ULL)(rs1 / rs2);
-    reg->setIntRegVal(rdVal, rdInt);
+    reg->setIntRegVal(rs1 / rs2, rdInt);
 }
 inline void REMW(LL rs1Val, LL rs2Val, int rdInt) {
-    LL rdVal;
-    if (rs2Val == 0) {
-        reg->setIntRegVal((int)rs1Val, rdInt);
-        return;
-    }
+    assert(rs2Val);
     int rs1 = rs1Val;
     int rs2 = rs2Val;
-    rdVal = (LL)(rs1 % rs2);
-    reg->setIntRegVal(rdVal, rdInt);
+    reg->setIntRegVal((LL)(rs1 % rs2), rdInt);
 }
 inline void REMUW(ULL rs1Val, ULL rs2Val, int rdInt) {
-    ULL rdVal;
-    if (rs2Val == 0) {
-        reg->setIntRegVal((unsigned int)rs1Val, rdInt);
-        return;
-    }
+    assert(rs2Val);
     unsigned int rs1 = rs1Val;
     unsigned int rs2 = rs2Val;
-    rdVal = (ULL)(rs1 / rs2);
-    reg->setIntRegVal(rdVal, rdInt);
+    reg->setIntRegVal(rs1 % rs2, rdInt);
 }
 
-void M_TYPE_funct3_1(string & instruction) {
+void M_TYPE_funct3_1() {
     // aLL M-TYPE instructions have the same part
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
@@ -1270,34 +1142,34 @@ void M_TYPE_funct3_1(string & instruction) {
     ULL rs2Val = reg->getIntRegVal(rs2Int);
     // common part ends here
 
-    string funct3 = instruction.substr(17, 3);
-    switch (stoi(funct3)) {
+    int funct3 = SUBINT(content, 12, 3);
+    switch (funct3) {
         case 000:
             MUL((LL)rs1Val, (LL)rs2Val, rdInt);
             break;
-        case 1:
+        case 0B1:
             MULH((LL)rs1Val, (LL)rs2Val, rdInt);
             break;
-        case 10:
+        case 0B10:
             MULHSU((LL)rs1Val, rs2Val, rdInt);
             break;
-        case 11:
+        case 0B11:
             MULHU(rs1Val, rs2Val, rdInt);
             break;
-        case 100:
+        case 0B100:
             DIV((LL)rs1Val, (LL)rs2Val, rdInt);
             break;
-        case 101:
+        case 0B101:
             DIVU(rs1Val, rs2Val, rdInt);
             break;
-        case 110:
+        case 0B110:
             REM((LL)rs1Val, (LL)rs2Val, rdInt);
             break;
-        case 111:
+        case 0B111:
             REMU(rs1Val, rs2Val, rdInt);
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "M-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
@@ -1305,7 +1177,7 @@ void M_TYPE_funct3_1(string & instruction) {
     }
 }
 
-void M_TYPE_funct3_2(string & instruction) {
+void M_TYPE_funct3_2() {
     // aLL M-TYPE instructions have the same part
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
@@ -1315,26 +1187,25 @@ void M_TYPE_funct3_2(string & instruction) {
     ULL rs2Val = reg->getIntRegVal(rs2Int);
     // common part ends here
 
-    string funct3 = instruction.substr(17, 3);
-    int tempInt = stoi(funct3);
-    switch (tempInt) {
+    int funct3 = SUBINT(content, 12, 3);
+    switch (funct3) {
         case 000:
             MULW((LL)rs1Val, (LL)rs2Val, rdInt);
             break;
-        case 100:
+        case 0B100:
             DIVW((LL)rs1Val, (LL)rs2Val, rdInt);
             break;
-        case 101:
+        case 0B101:
             DIVUW(rs1Val, rs2Val, rdInt);
             break;
-        case 110:
+        case 0B110:
             REMW((LL)rs1Val, (LL)rs2Val, rdInt);
             break;
-        case 111:
+        case 0B111:
             REMUW(rs1Val, rs2Val, rdInt);
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "M-TYPE funct3 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
@@ -1562,23 +1433,22 @@ inline void FCVT_SL_SW(int rs1Int, int rs2Int, int rdInt, int rmInt) {
 /*
 the control logic
 */
-inline void FLoad_funct3(string & instruction) {
+inline void FLoad_funct3() {
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
     LL immediateNum = (LL)content >> 20;
 
     LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
 
-    string funct3 = instruction.substr(17, 3);
-    int tempInt = stoi(funct3);
-    if (tempInt == 10) {
+    int funct3 = SUBINT(content, 12, 3);
+    if (funct3 == 0B10) {
         union{
             float fl;
             unsigned int ui;
         }loadData;
         loadData.ui = (unsigned int)((ULL)memory[immediateNum + rs1Val]);
         reg->setFloatRegVal(loadData.fl, rdInt);
-    } else if (tempInt == 11) {
+    } else if (funct3 == 0B11) {
         union{
             double db;
             unsigned long long dword;
@@ -1586,14 +1456,14 @@ inline void FLoad_funct3(string & instruction) {
         loadData.dword = memory[immediateNum + rs1Val];
         reg->setFloatRegVal(loadData.db, rdInt);
     } else {
-        cerr << "Error when parsing instruction: " << instruction << endl;
+        cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "float load funct3 error!" << endl;
         cerr << "Exit!" << endl;
         assert(false);
     }
 }
 
-inline void FStore_funct3(string & instruction) {
+inline void FStore_funct3() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     LL immediateLowerPart = (LL)(content >> 7) & 31;
@@ -1604,9 +1474,8 @@ inline void FStore_funct3(string & instruction) {
     LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
     LL memoryAddr = immediateNum + rs1Val;
 
-    string funct3 = instruction.substr(17, 3);
-    int tempInt = stoi(funct3);
-    if (tempInt == 10) {
+    int funct3 = SUBINT(content, 12, 3);
+    if (funct3 == 0B10) {
         union{
             float fl;
             unsigned int ui;
@@ -1614,7 +1483,7 @@ inline void FStore_funct3(string & instruction) {
         rs2Val.fl = reg->getFloatRegVal(rs2Int);
         // mymem.rwmemWriteWord(*((unsigned int *)(&rs2Val)), memoryAddr);
         memoryWrite(memoryAddr, rs2Val.ui, 4);
-    } else if (tempInt == 11) {
+    } else if (funct3 == 0B11) {
         union{
             double db;
             unsigned long long dword;
@@ -1623,193 +1492,189 @@ inline void FStore_funct3(string & instruction) {
         // mymem.rwmemWriteDword(*((ULL *)(&rs2val)), memoryAddr);
         memoryWrite(memoryAddr, rs2Val.dword, 8);
     } else {
-        cerr << "Error when parsing instruction: " << instruction << endl;
+        cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "float load funct3 error!" << endl;
         cerr << "Exit!" << endl;
         assert(false);
     }
 }
 
-inline void FMadd_funct2(string & instruction) {
+inline void FMadd_funct2() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     int rs3Int = (content >> 27) & 31;
     int rdInt = (content >> 7) & 31;
 
-    string funct2 = instruction.substr(5, 2);
-    int tempInt = stoi(funct2);
-    if (tempInt == 0) {
+    int funct2 = SUBINT(content, 25, 2);
+    if (funct2 == 0) {
         float rs1Val = reg->getFloatRegVal(rs1Int);
         float rs2Val = reg->getFloatRegVal(rs2Int);
         float rs3Val = reg->getFloatRegVal(rs3Int);
         float rdVal = rs1Val * rs2Val + rs3Val;
         reg->setFloatRegVal(rdVal, rdInt);
-    } else if (tempInt == 1) {
+    } else if (funct2 == 1) {
         double rs1val = reg->getFloatRegVal(rs1Int);
         double rs2val = reg->getFloatRegVal(rs2Int);
         double rs3val = reg->getFloatRegVal(rs3Int);
         double rdval = rs1val * rs2val + rs3val;
         reg->setFloatRegVal(rdval, rdInt);
     } else {
-        cerr << "Error when parsing instruction: " << instruction << endl;
+        cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "fmadd funct2 error!" << endl;
         cerr << "Exit!" << endl;
         assert(false);
     }
 }
 
-inline void FMsub_funct2(string & instruction) {
+inline void FMsub_funct2() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     int rs3Int = (content >> 27) & 31;
     int rdInt = (content >> 7) & 31;
 
-    string funct2 = instruction.substr(5, 2);
-    int tempInt = stoi(funct2);
-    if (tempInt == 0) {
+    int funct2 = SUBINT(content, 25, 2);
+    if (funct2 == 0) {
         float rs1Val = reg->getFloatRegVal(rs1Int);
         float rs2Val = reg->getFloatRegVal(rs2Int);
         float rs3Val = reg->getFloatRegVal(rs3Int);
         float rdVal = rs1Val * rs2Val - rs3Val;
         reg->setFloatRegVal(rdVal, rdInt);
-    } else if (tempInt == 1) {
+    } else if (funct2 == 1) {
         double rs1val = reg->getFloatRegVal(rs1Int);
         double rs2val = reg->getFloatRegVal(rs2Int);
         double rs3val = reg->getFloatRegVal(rs3Int);
         double rdval = rs1val * rs2val - rs3val;
         reg->setFloatRegVal(rdval, rdInt);
     } else {
-        cerr << "Error when parsing instruction: " << instruction << endl;
+        cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "fmsub funct2 error!" << endl;
         cerr << "Exit!" << endl;
         assert(false);
     }
 }
 
-inline void FNMsub_funct2(string & instruction) {
+inline void FNMsub_funct2() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     int rs3Int = (content >> 27) & 31;
     int rdInt = (content >> 7) & 31;
 
-    string funct2 = instruction.substr(5, 2);
-    int tempInt = stoi(funct2);
-    if (tempInt == 0) {
+    int funct2 = SUBINT(content, 25, 2);
+    if (funct2 == 0) {
         float rs1Val = reg->getFloatRegVal(rs1Int);
         float rs2Val = reg->getFloatRegVal(rs2Int);
         float rs3Val = reg->getFloatRegVal(rs3Int);
         float rdVal = -(rs1Val * rs2Val - rs3Val);
         reg->setFloatRegVal(rdVal, rdInt);
-    } else if (tempInt == 1) {
+    } else if (funct2 == 1) {
         double rs1val = reg->getFloatRegVal(rs1Int);
         double rs2val = reg->getFloatRegVal(rs2Int);
         double rs3val = reg->getFloatRegVal(rs3Int);
         double rdval = -(rs1val * rs2val - rs3val);
         reg->setFloatRegVal(rdval, rdInt);
     } else {
-        cerr << "Error when parsing instruction: " << instruction << endl;
+        cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "fnmsub funct2 error!" << endl;
         cerr << "Exit!" << endl;
         assert(false);
     }
 }
 
-inline void FNMadd_funct2(string & instruction) {
+inline void FNMadd_funct2() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     int rs3Int = (content >> 27) & 31;
     int rdInt = (content >> 7) & 31;
 
-    string funct2 = instruction.substr(5, 2);
-    int tempInt = stoi(funct2);
-    if (tempInt == 0) {
+    int funct2 = SUBINT(content, 25, 2);
+    if (funct2 == 0) {
         float rs1Val = reg->getFloatRegVal(rs1Int);
         float rs2Val = reg->getFloatRegVal(rs2Int);
         float rs3Val = reg->getFloatRegVal(rs3Int);
         float rdVal = -(rs1Val * rs2Val + rs3Val);
         reg->setFloatRegVal(rdVal, rdInt);
-    } else if (tempInt == 1) {
+    } else if (funct2 == 1) {
         double rs1val = reg->getFloatRegVal(rs1Int);
         double rs2val = reg->getFloatRegVal(rs2Int);
         double rs3val = reg->getFloatRegVal(rs3Int);
         double rdval = -(rs1val * rs2val + rs3val);
         reg->setFloatRegVal(rdval, rdInt);
     } else {
-        cerr << "Error when parsing instruction: " << instruction << endl;
+        cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "fnmadd funct2 error!" << endl;
         cerr << "Exit!" << endl;
         assert(false);
     }
 }
 
-inline void F_TYPE_funct7(string & instruction) {
+inline void F_TYPE_funct7() {
     int rs1Int = (content >> 15) & 31;
     int rs2Int = (content >> 20) & 31;
     int rs3Int = (content >> 27) & 31;
     int rdInt = (content >> 7) & 31;
     int rmInt = (content >> 12) & 7;
 
-    string funct7 = instruction.substr(0, 7);
-    switch (stoi(funct7)) {
-        case 0000001:
+    int funct7 = SUBINT(content, 25, 7);
+    switch (funct7) {
+        case 0B0000001:
             FADD_D(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 101:
+        case 0B101:
             FSUB_D(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1001:
+        case 0B1001:
             FMUL_D(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1000:
+        case 0B1000:
             FMUL(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1100:
+        case 0B1100:
             FDIV(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1101:
+        case 0B1101:
             FDIV_D(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 101101:
+        case 0B101101:
             FSQRT_D(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 10001:
+        case 0B10001:
             FSGNJ_D_funct3(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 10101:
+        case 0B10101:
             FMIN_MAX_D(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 100000:
+        case 0B100000:
             FCVT_SD(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 100001:
+        case 0B100001:
             FCVT_DS(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1010001:
+        case 0B1010001:
             FEQ_LT_LE(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1110000:
+        case 0B1110000:
             FCLASS(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1100001:
+        case 0B1100001:
             FCVT_WD_LD(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1101001:
+        case 0B1101001:
             FCVT_DW_DL(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1110001:
+        case 0B1110001:
             FMV_XD(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1111001:
+        case 0B1111001:
             FMV_DX(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1101000:
+        case 0B1101000:
             FCVT_SW_SL(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 1100000:
+        case 0B1100000:
             FCVT_SL_SW(rs1Int, rs2Int, rdInt, rmInt);
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "F-TYPE funct7 error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
@@ -1821,94 +1686,84 @@ End of decoding FandD-TPYE instructions
  */
 
 // to get the type of the instruction
-inline void getOpcode(string & instruction) {
-    string opcode = instruction.substr(25, 7);
+inline void getOpcode() {
+    int opcode = SUBINT(content, 0, 7);
     /*
     R-TYPE:1; I-TYPE:2; S-TYPE:3; SB-TYPE:4; UJ-TYPE:5; U-TYPE:6; SYS-TYPE:7;
      */
-
-    switch (typeIndex[opcode]) {
-        case 1:
-            R_TYPE_opcode(instruction);
+    switch (opcode) {
+        case 0B0110011: case 0B0111011:
+            R_TYPE_opcode();
             break;
-        case 2:
-            I_TYPE_opcode(instruction);
+        case 0B0010011: case 0B0000011: case 0B1100111: case 0B0011011:
+            I_TYPE_opcode();
             break;
-        case 3:
-            S_TYPE_funct3(instruction);
+        case 0B0100011:
+            S_TYPE_funct3();
             break;
-        case 4:
-            SB_TYPE_funct3(instruction);
+        case 0B1100011:
+            SB_TYPE_funct3();
             break;
-        case 6:
-            U_TYPE_opcode(instruction);
+        case 0B0010111: case 0B0110111:
+            U_TYPE_opcode();
             break;
-        case 5:
-            jal(instruction);
+        case 0B1101111:
+            jal();
             break;
-        case 7:
-            SYS_INSTRUCTION(instruction);
+        case 0B1110011:
+            SYS_INSTRUCTION();
             break;
-        case 8:
-            FLoad_funct3(instruction);
+        case 0B0000111:
+            FLoad_funct3();
             break;
-        case 9:
-            FStore_funct3(instruction);
+        case 0B0100111:
+            FStore_funct3();
             break;
-        case 10:
-            FMadd_funct2(instruction);
+        case 0B1000011:
+            FMadd_funct2();
             break;
-        case 11:
-            FMsub_funct2(instruction);
+        case 0B1000111:
+            FMsub_funct2();
             break;
-        case 12:
-            FNMsub_funct2(instruction);
+        case 0B1001011:
+            FNMsub_funct2();
             break;
-        case 13:
-            FNMadd_funct2(instruction);
+        case 0B1001111:
+            FNMadd_funct2();
             break;
-        case 14:
-            F_TYPE_funct7(instruction);
+        case 0B1010011:
+            F_TYPE_funct7();
             break;
         default:
-            cerr << "Error when parsing instruction: " << instruction << endl;
+            cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "opcode error!" << endl;
             cerr << "Exit!" << endl;
             assert(false);
             return;
     }
 }
-void decode(ULL startAddr, bool enable_debug) {
+int decode(ULL startAddr, bool enable_debug) {
     reg = new RegisterFile;
     Initialize(startAddr);  // Initialize some variables and prepare for the
                             // decode part
-
-    char tempChar[33];
     bool flag = false;
     debuger mydb = debuger(memory, reg);
-    while (true) {
+    while (!is_exit) {
         if (enable_debug){ 
 			mydb.wait();
 			ins_counter++;
 		}
-        memset(tempChar, 0, sizeof(tempChar));
 
         // cout << "PC: " << reg->getPC() << endl;
-        // cerr << "PC: hex " << std::hex << reg->getPC() << endl;
+        //cerr << "PC: hex " << std::hex << reg->getPC() << endl;
         content = memory[reg->getPC()];
-        // printf("%02x\n", content);
-        // de.push_front(reg->getPC());
-        for (int i = 0; i < 32; ++i)
-            tempChar[31 - i] = (content & (1 << i)) == 0 ? '0' : '1';
-        tempChar[32] = 0;
-        string instruction(tempChar);
-
-        // std::cout << instruction << endl;
-        getOpcode(instruction);
+        // std::cout << hex << content << endl;
+        getOpcode();
 
         if (canjump)
             canjump = false;
         else
             reg->changePC(4);
     }
+    return exit_code;
 }
