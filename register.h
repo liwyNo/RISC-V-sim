@@ -13,7 +13,7 @@ typedef unsigned long long ULL;
 struct RegisterFile {
     ULL pc;
     ULL x[32];
-    double f[32];
+    ULL f[32];
 
    public:
     RegisterFile() {

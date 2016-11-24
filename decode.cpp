@@ -12,13 +12,21 @@ using namespace std;
 #define MASK(x) ((1ULL << x) - 1)
 #define SUBINT(x,y,z) (((x) >> (y)) & MASK((z)))
 long long ins_counter = 0;
-map<string, int> typeIndex;
 RegisterFile *reg;
 extern VM memory;
 bool is_exit = false;
 int exit_code = 0;
 int content;  // the integer value of one instruction
 bool canjump = false;
+
+union float_32{
+    float fl;
+    unsigned int ui;
+};
+union double_64{
+    double db;
+    unsigned long long dword;
+};
 inline void memoryWrite(ULL offset, ULL value, unsigned char bit) {
     ULL ori = memory[offset];
     ULL mask = bit == 8 ? ~0ULL : ((1ULL << (bit * 8)) - 1);
@@ -371,9 +379,9 @@ inline void slti() {
 // number
 inline void sltiu() {
     ULL immediateNum = (ULL)((LL)(content >> 20));  // the immediate is first
-                                                    // sign-extended to XLEN
-                                                    // bits then treated as an
-                                                    // unsigned number
+    // sign-extended to XLEN
+    // bits then treated as an
+    // unsigned number
     int rs1Int = (content >> 15) & 31;
     int rdInt = (content >> 7) & 31;
 
@@ -677,7 +685,7 @@ inline void sb() {
     LL immediateLowerPart = (LL)(content >> 7) & 31;
     LL immediateHigherPart = (LL)((content >> 25) & 127) << 5;
     LL immediateNum = ((immediateHigherPart + immediateLowerPart) << 52) >>
-                      52;  // get the immediate number and get sign-extended
+                                                                         52;  // get the immediate number and get sign-extended
 
     LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
     LL memoryAddr = immediateNum + rs1Val;
@@ -692,7 +700,7 @@ inline void sh() {
     LL immediateLowerPart = (LL)(content >> 7) & 31;
     LL immediateHigherPart = (LL)((content >> 25) & 127) << 5;
     LL immediateNum = ((immediateHigherPart + immediateLowerPart) << 52) >>
-                      52;  // get the immediate number and get sign-extended
+                                                                         52;  // get the immediate number and get sign-extended
 
     LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
     LL memoryAddr = immediateNum + rs1Val;
@@ -707,7 +715,7 @@ inline void sw() {
     LL immediateLowerPart = (LL)(content >> 7) & 31;
     LL immediateHigherPart = (LL)((content >> 25) & 127) << 5;
     LL immediateNum = ((immediateHigherPart + immediateLowerPart) << 52) >>
-                      52;  // get the immediate number and get sign-extended
+                                                                         52;  // get the immediate number and get sign-extended
 
     LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
     LL memoryAddr = immediateNum + rs1Val;
@@ -723,7 +731,7 @@ inline void sd() {
     LL immediateLowerPart = (LL)(content >> 7) & 31;
     LL immediateHigherPart = (LL)((content >> 25) & 127) << 5;
     LL immediateNum = ((immediateHigherPart + immediateLowerPart) << 52) >>
-                      52;  // get the immediate number and get sign-extended
+                                                                         52;  // get the immediate number and get sign-extended
 
     LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
     LL memoryAddr = immediateNum + rs1Val;
@@ -776,8 +784,8 @@ inline void beq() {
         ULL immediateNum_3 = ((content >> 25) & 63) << 4;
         ULL immediateNum_4 = ((content >> 8) & 15);
         LL immediateNum =
-            (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
-            << 1;
+                (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
+                        << 1;
         immediateNum = (immediateNum << 51) >> 51;
 
         canjump = true;
@@ -795,8 +803,8 @@ inline void bne() {
         ULL immediateNum_3 = ((content >> 25) & 63) << 4;
         ULL immediateNum_4 = ((content >> 8) & 15);
         LL immediateNum =
-            (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
-            << 1;
+                (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
+                        << 1;
         immediateNum = (immediateNum << 51) >> 51;
 
         canjump = true;
@@ -814,8 +822,8 @@ inline void blt() {
         ULL immediateNum_3 = ((content >> 25) & 63) << 4;
         ULL immediateNum_4 = ((content >> 8) & 15);
         LL immediateNum =
-            (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
-            << 1;
+                (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
+                        << 1;
         immediateNum = (immediateNum << 51) >> 51;
 
         canjump = true;
@@ -833,8 +841,8 @@ inline void bge() {
         ULL immediateNum_3 = ((content >> 25) & 63) << 4;
         ULL immediateNum_4 = ((content >> 8) & 15);
         LL immediateNum =
-            (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
-            << 1;
+                (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
+                        << 1;
         immediateNum = (immediateNum << 51) >> 51;
 
         canjump = true;
@@ -853,7 +861,7 @@ inline void bltu() {
         ULL immediateNum_4 = ((content >> 8) & 15);
         LL immediateNum = (LL)(immediateNum_1 + immediateNum_2 +
                                immediateNum_3 + immediateNum_4)
-                          << 1;
+                << 1;
         immediateNum = (immediateNum << 51) >> 51;
 
         canjump = true;
@@ -871,8 +879,8 @@ inline void bgeu() {
         ULL immediateNum_3 = ((content >> 25) & 63) << 4;
         ULL immediateNum_4 = ((content >> 8) & 15);
         LL immediateNum =
-            (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
-            << 1;
+                (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
+                        << 1;
         immediateNum = (immediateNum << 51) >> 51;
 
         canjump = true;
@@ -922,16 +930,16 @@ instructions
 inline void lui() {
     int rdInt = (content >> 7) & 31;
     LL immediateNum =
-        (LL)((content >> 12)
-             << 12);  // The 32-bit result is sign-extended to 64 bits.
+            (LL)((content >> 12)
+                    << 12);  // The 32-bit result is sign-extended to 64 bits.
 
     reg->setIntRegVal((ULL)immediateNum, rdInt);
 }
 inline void auipc() {
     int rdInt = (content >> 7) & 31;
     LL immediateNum =
-        (LL)((content >> 12)
-             << 12);  // The 32-bit result is sign-extended to 64 bits.
+            (LL)((content >> 12)
+                    << 12);  // The 32-bit result is sign-extended to 64 bits.
 
     ULL rdVal = reg->getPC() + (ULL)immediateNum;
     reg->setIntRegVal(rdVal, rdInt);
@@ -971,8 +979,8 @@ inline void jal() {
     LL immediateNum_3 = ((content >> 20) & 1) << 10;
     LL immediateNum_4 = ((content >> 21) & 1023);
     LL immediateNum =
-        (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
-        << 1;
+            (immediateNum_1 + immediateNum_2 + immediateNum_3 + immediateNum_4)
+                    << 1;
     immediateNum = (immediateNum << 43) >> 43;
 
     reg->setIntRegVal((ULL)reg->getPC() + 4, rdInt);
@@ -1043,47 +1051,53 @@ inline void MUL(LL rs1Val, LL rs2Val, int rdInt) {
 inline void MULH(LL rs1Val, LL rs2Val, int rdInt) {
     LL rdVal;
     __asm__(
-        "pushq %%rax\n\t"
-        "pushq %%rdx\n\t"
-        "movq %1, %%rax\n\t"
-        "imulq %2\n\t"
-        "movq %%rdx, %0\n\t"
-        "popq %%rdx\n\t"
-        "popq %%rax\n\t"
-        : "=m"(rdVal)
-        : "r"(rs1Val), "r"(rs2Val));
+    "pushq %%rax\n\t"
+            "pushq %%rdx\n\t"
+            "movq %1, %%rax\n\t"
+            "imulq %2\n\t"
+            "movq %%rdx, %0\n\t"
+            "popq %%rdx\n\t"
+            "popq %%rax\n\t"
+    : "=m"(rdVal)
+    : "r"(rs1Val), "r"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
 inline void MULHSU(LL rs1Val, ULL rs2Val, int rdInt) {
-    ULL rdVal;
-    ULL sign = rs1Val & (1ULL << 63);
-    rs1Val &= MASK(63);
-    __asm__ (
-        "pushq %%rax\n\t"
-        "pushq %%rdx\n\t"
-        "movq %1, %%rax\n\t"
-        "mulq %2\n\t"
-        "movq %%rdx, %0\n\t"
-        "popq %%rdx\n\t"
-        "popq %%rax\n\t"
-        : "=m"(rdVal)
-        : "r"(rs1Val), "r"(rs2Val));
-    rdVal &= MASK(63);
-    rdVal |= sign;
-    reg->setIntRegVal(rdVal, rdInt);
+    __int128 rs1;
+    unsigned __int128 rs2;
+    unsigned __int128 rd;
+    rd = rs1 * rs2;
+    rd >>= 64;
+    reg->setFloatRegVal(rd, rdInt);
+//    ULL rdVal;
+//    ULL sign = rs1Val & (1ULL << 63);
+//    rs1Val &= MASK(63);
+//    __asm__ (
+//    "pushq %%rax\n\t"
+//            "pushq %%rdx\n\t"
+//            "movq %1, %%rax\n\t"
+//            "mulq %2\n\t"
+//            "movq %%rdx, %0\n\t"
+//            "popq %%rdx\n\t"
+//            "popq %%rax\n\t"
+//    : "=m"(rdVal)
+//    : "r"(rs1Val), "r"(rs2Val));
+//    rdVal &= MASK(63);
+//    rdVal |= sign;
+//    reg->setIntRegVal(rdVal, rdInt);
 }
 inline void MULHU(ULL rs1Val, ULL rs2Val, int rdInt) {
     ULL rdVal;
     __asm__(
-        "pushq %%rax\n\t"
-        "pushq %%rdx\n\t"
-        "movq %1, %%rax\n\t"
-        "mulq %2\n\t"
-        "movq %%rdx, %0\n\t"
-        "popq %%rdx\n\t"
-        "popq %%rax\n\t"
-        : "=m"(rdVal)
-        : "r"(rs1Val), "r"(rs2Val));
+    "pushq %%rax\n\t"
+            "pushq %%rdx\n\t"
+            "movq %1, %%rax\n\t"
+            "mulq %2\n\t"
+            "movq %%rdx, %0\n\t"
+            "popq %%rdx\n\t"
+            "popq %%rax\n\t"
+    : "=m"(rdVal)
+    : "r"(rs1Val), "r"(rs2Val));
     reg->setIntRegVal(rdVal, rdInt);
 }
 inline void DIV(LL rs1Val, LL rs2Val, int rdInt) {
@@ -1226,40 +1240,31 @@ instructions
 //---------------------lalala-------------------------
 inline void FSQRT_D(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false); }
 inline void FSGNJ_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    union {
-        ULL dword;
-        double db;
-    } rs1Val, rs2Val, rdVal;
-    rs1Val.db = reg->getFloatRegVal(rs1Int);
-    rs2Val.db = reg->getFloatRegVal(rs2Int);
-    rdVal.dword = rs1Val.dword & (~(1ULL << 63));
-    ULL mid_var = (rs2Val.dword >> 63) << 63;
-    rdVal.dword |= mid_var;
-    reg->setFloatRegVal(rdVal.db, rdInt);
+    ULL rs1Val, rs2Val, rdVal;
+    rs1Val = reg->getFloatRegVal(rs1Int);
+    rs2Val = reg->getFloatRegVal(rs2Int);
+    rdVal = rs1Val & (~(1ULL << 63));
+    ULL mid_var = (rs2Val >> 63) << 63;
+    rdVal |= mid_var;
+    reg->setFloatRegVal(rdVal, rdInt);
 }
 inline void FSGNJN_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    union {
-        ULL dword;
-        double db;
-    } rs1Val, rs2Val, rdVal;
-    rs1Val.db = reg->getFloatRegVal(rs1Int);
-    rs2Val.db = reg->getFloatRegVal(rs2Int);
-    rdVal.dword = rs1Val.dword & (~(1ULL << 63));
-    ULL mid_var = ((~rs2Val.dword) >> 63) << 63;
-    rdVal.dword |= mid_var;
-    reg->setFloatRegVal(rdVal.db, rdInt);
+    ULL rs1Val, rs2Val, rdVal;
+    rs1Val = reg->getFloatRegVal(rs1Int);
+    rs2Val = reg->getFloatRegVal(rs2Int);
+    rdVal = rs1Val & (~(1ULL << 63));
+    ULL mid_var = ((~rs2Val) >> 63) << 63;
+    rdVal |= mid_var;
+    reg->setFloatRegVal(rdVal, rdInt);
 }
 inline void FSGNJX_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    union {
-        ULL dword;
-        double db;
-    } rs1Val, rs2Val, rdVal;
-    rs1Val.db = reg->getFloatRegVal(rs1Int);
-    rs2Val.db = reg->getFloatRegVal(rs2Int);
-    rdVal.dword = rs1Val.dword & (~(1ULL << 63));
-    ULL mid_var = ((rs2Val.dword ^ rs1Val.dword) >> 63) << 63;
-    rdVal.dword |= mid_var;
-    reg->setFloatRegVal(rdVal.db, rdInt);
+    ULL rs1Val, rs2Val, rdVal;
+    rs1Val = reg->getFloatRegVal(rs1Int);
+    rs2Val = reg->getFloatRegVal(rs2Int);
+    rdVal = rs1Val & (~(1ULL << 63));
+    ULL mid_var = ((rs2Val ^ rs1Val) >> 63) << 63;
+    rdVal |= mid_var;
+    reg->setFloatRegVal(rdVal, rdInt);
 }
 inline void FSGNJ_D_funct3(int rs1Int, int rs2Int, int rdInt, int rmInt) {
     int funct3 = rmInt;
@@ -1284,152 +1289,217 @@ inline void FCLASS(int rs1Int, int rs2Int, int rdInt, int rmInt) { assert(false)
 //---------------------lalala-------------------------
 
 inline void FADD_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    double rs1Val = reg->getFloatRegVal(rs1Int);
-    double rs2Val = reg->getFloatRegVal(rs2Int);
-    reg->setFloatRegVal(rs1Val + rs2Val, rdInt);
+    ULL temp1 = reg->getFloatRegVal(rs1Int);
+    double rs1Val = *(double *)&temp1;
+    ULL temp2 = reg->getFloatRegVal(rs2Int);
+    double rs2Val = *(double *)&temp2;
+    double result = rs1Val+rs2Val;
+    reg->setFloatRegVal(*(ULL *)&result, rdInt);
 }
 inline void FSUB_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    double rs1Val = reg->getFloatRegVal(rs1Int);
-    double rs2Val = reg->getFloatRegVal(rs2Int);
-    reg->setFloatRegVal(rs1Val - rs2Val, rdInt);
+    ULL temp1 = reg->getFloatRegVal(rs1Int);
+    double rs1Val = *(double *)&temp1;
+    ULL temp2 = reg->getFloatRegVal(rs2Int);
+    double rs2Val = *(double *)&temp2;
+    double result = rs1Val-rs2Val;
+    reg->setFloatRegVal(*(ULL *)&result, rdInt);
 }
 inline void FMUL_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    double rs1Val = reg->getFloatRegVal(rs1Int);
-    double rs2Val = reg->getFloatRegVal(rs2Int);
-    reg->setFloatRegVal(rs1Val * rs2Val, rdInt);
+    ULL temp1 = reg->getFloatRegVal(rs1Int);
+    double rs1Val = *(double *)&temp1;
+    ULL temp2 = reg->getFloatRegVal(rs2Int);
+    double rs2Val = *(double *)&temp2;
+    double result = rs1Val*rs2Val;
+    reg->setFloatRegVal(*(ULL *)&result, rdInt);
 }
 inline void FMUL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    float rs1Val = reg->getFloatRegVal(rs1Int);
-    float rs2Val = reg->getFloatRegVal(rs2Int);
-    reg->setFloatRegVal(rs1Val * rs2Val, rdInt);
+    unsigned int temp1 = reg->getFloatRegVal(rs1Int);
+    unsigned int temp2 = reg->getFloatRegVal(rs2Int);
+    float rs1Val = *(float *)&temp1;
+    float rs2Val = *(float *)&temp2;
+    float result = rs1Val*rs2Val;
+    reg->setFloatRegVal(*(unsigned int *)&result, rdInt);
 }
 inline void FDIV(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    float rs1Val = reg->getFloatRegVal(rs1Int);
-    float rs2Val = reg->getFloatRegVal(rs2Int);
-    reg->setFloatRegVal(rs1Val / rs2Val, rdInt);
+    unsigned int temp1 = reg->getFloatRegVal(rs1Int);
+    unsigned int temp2 = reg->getFloatRegVal(rs2Int);
+    float rs1Val = *(float *)&temp1;
+    float rs2Val = *(float *)&temp2;
+    float result = rs1Val/rs2Val;
+    reg->setFloatRegVal(*(unsigned int *)&result, rdInt);
 }
 inline void FDIV_D(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    double rs1Val = reg->getFloatRegVal(rs1Int);
-    double rs2Val = reg->getFloatRegVal(rs2Int);
-    reg->setFloatRegVal(rs1Val / rs2Val, rdInt);
+    ULL temp1 = reg->getFloatRegVal(rs1Int);
+    double rs1Val = *(double *)&temp1;
+    ULL temp2 = reg->getFloatRegVal(rs2Int);
+    double rs2Val = *(double *)&temp2;
+    double result = rs1Val/rs2Val;
+    reg->setFloatRegVal(*(ULL *)&result, rdInt);
 }
 inline void FCVT_SD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    float rs1Val = reg->getFloatRegVal(rs1Int);
-    reg->setFloatRegVal(rs1Val, rdInt);
+    ULL temp1 = reg->getFloatRegVal(rs1Int);
+    float rs1Val = *(double *)&temp1;
+    reg->setFloatRegVal(*(unsigned int *)&rs1Val, rdInt);
 }
 inline void FCVT_DS(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    float rs1Val = reg->getFloatRegVal(rs1Int);
-    reg->setFloatRegVal(rs1Val, rdInt);
+    unsigned int temp1 = reg->getFloatRegVal(rs1Int);
+    double rs1Val = *(float *)&temp1;
+    reg->setFloatRegVal(*(ULL *)&rs1Val, rdInt);
 }
 inline void FEQ_LT_LE(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    double rs1Val = reg->getFloatRegVal(rs1Int);
-    double rs2Val = reg->getFloatRegVal(rs2Int);
-    if (rmInt == 0) {
-        if (rs1Val <= rs2Val)
+    ULL temp1 = reg->getFloatRegVal(rs1Int);
+    double rs1Val = *(double *)&temp1;
+    ULL temp2 = reg->getFloatRegVal(rs2Int);
+    double rs2Val = *(double *)&temp2;
+    if(rmInt == 0)
+    {
+        if(rs1Val <= rs2Val)
             reg->setIntRegVal(1, rdInt);
         else
             reg->setIntRegVal(0, rdInt);
-    } else if (rmInt == 1) {
-        if (rs1Val < rs2Val)
+    }
+    else if(rmInt == 1)
+    {
+        if(rs1Val < rs2Val)
             reg->setIntRegVal(1, rdInt);
         else
             reg->setIntRegVal(0, rdInt);
-    } else if (rmInt == 2) {
-        if (rs1Val == rs2Val)
+    }
+    else if(rmInt == 2)
+    {
+        if(rs1Val == rs2Val)
             reg->setIntRegVal(1, rdInt);
         else
             reg->setIntRegVal(0, rdInt);
-    } else {
-        cerr << "fcompare ins was wrong!" << endl;
-        cerr << "Exit!" << endl;
+    }
+    else
+    {
+        cout << "fcompare ins was wrong!" << endl;
+        cout << "Exit!" << endl;
         assert(false);
     }
 }
 inline void FCVT_WD_LD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    double rs1Val = reg->getFloatRegVal(rs1Int);
-    if (rs2Int == 0) {
+    ULL temp1 = reg->getFloatRegVal(rs1Int);
+    double rs1Val = *(double *)&temp1;
+    if(rs2Int == 0)
+    {
         reg->setIntRegVal((int)rs1Val, rdInt);
-    } else if (rs2Int == 1) {
+    }
+    else if(rs2Int == 1)
+    {
         reg->setIntRegVal((unsigned int)rs1Val, rdInt);
-    } else if (rs2Int == 2) {
+    }
+    else if(rs2Int == 2)
+    {
         reg->setIntRegVal((long long)rs1Val, rdInt);
-    } else if (rs2Int == 3) {
+    }
+    else if(rs2Int == 3)
+    {
         reg->setIntRegVal((unsigned long long)rs1Val, rdInt);
-    } else {
-        cerr << "fcvt.*.d ins was wrong!" << endl;
-        cerr << "Exit!" << endl;
+    }
+    else
+    {
+        cout << "fcvt.*.d ins was wrong!" << endl;
+        cout << "Exit!" << endl;
         assert(false);
     }
 }
 inline void FCVT_DW_DL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    if (rs2Int == 0) {
-        int rs1Val = reg->getIntRegVal(rs1Int);
-        reg->setFloatRegVal(rs1Val, rdInt);
-    } else if (rs2Int == 1) {
-        unsigned int rs1Val = reg->getIntRegVal(rs1Int);
-        reg->setFloatRegVal(rs1Val, rdInt);
-    } else if (rs2Int == 2) {
-        long long rs1Val = reg->getIntRegVal(rs1Int);
-        reg->setFloatRegVal(rs1Val, rdInt);
-    } else if (rs2Int == 3) {
-        unsigned long long rs1Val = reg->getIntRegVal(rs1Int);
-        reg->setFloatRegVal(rs1Val, rdInt);
-    } else {
-        cerr << "fcvt.d.* ins was wrong!" << endl;
-        cerr << "Exit!" << endl;
+    if(rs2Int == 0)
+    {
+        int temp = reg->getIntRegVal(rs1Int);
+        double rs1Val = temp;
+        reg->setFloatRegVal(*(ULL *)&rs1Val, rdInt);
+    }
+    else if(rs2Int == 1)
+    {
+        unsigned int temp = reg->getIntRegVal(rs1Int);
+        double rs1Val = temp;
+        reg->setFloatRegVal(*(ULL *)&rs1Val, rdInt);
+    }
+    else if(rs2Int == 2)
+    {
+        long long temp = reg->getIntRegVal(rs1Int);
+        double rs1Val = temp;
+        reg->setFloatRegVal(*(ULL *)&rs1Val, rdInt);
+    }
+    else if(rs2Int == 3)
+    {
+        ULL temp = reg->getIntRegVal(rs1Int);
+        double rs1Val = temp;
+        reg->setFloatRegVal(*(ULL *)&rs1Val, rdInt);
+    }
+    else
+    {
+        cout << "fcvt.d.* ins was wrong!" << endl;
+        cout << "Exit!" << endl;
         assert(false);
     }
 }
 inline void FMV_XD(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    if (rmInt != 0) {
+    if(rmInt != 0)
+    {
         FCLASS(rs1Int, rs2Int, rdInt, rmInt);
         return;
     }
-    double rs1Val = reg->getFloatRegVal(rs1Int);
-    reg->setIntRegVal(*((unsigned long long *)(&rs1Val)), rdInt);
+    reg->setIntRegVal(reg->getFloatRegVal(rs1Int),rdInt);
 }
 inline void FMV_DX(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    unsigned long long rs1Val = reg->getIntRegVal(rs1Int);
-    reg->setFloatRegVal(*((double *)(&rs1Val)), rdInt);
+    reg->setFloatRegVal(reg->getIntRegVal(rs1Int),rdInt);
 }
 inline void FCVT_SW_SL(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    if (rs2Int == 0) {
-        int rs1Val = reg->getIntRegVal(rs1Int);
-        reg->setFloatRegVal((float)rs1Val, rdInt);
-    } else if (rs2Int == 1) {
-        unsigned int rs1Val = reg->getIntRegVal(rs1Int);
-        reg->setFloatRegVal((float)rs1Val, rdInt);
-    } else if (rs2Int == 2) {
-        long long rs1Val = reg->getIntRegVal(rs1Int);
-        reg->setFloatRegVal((float)rs1Val, rdInt);
-    } else if (rs2Int == 3) {
-        unsigned long long rs1Val = reg->getIntRegVal(rs1Int);
-        reg->setFloatRegVal((float)rs1Val, rdInt);
-    } else {
-        cerr << "fcvt.s.* ins was wrong!" << endl;
-        cerr << "Exit!" << endl;
+    if(rs2Int == 0)
+    {
+        int temp = reg->getIntRegVal(rs1Int);
+        float rs1Val = temp;
+        reg->setFloatRegVal(*(unsigned int *)&rs1Val, rdInt);
+    }
+    else if(rs2Int == 1)
+    {
+        unsigned int temp = reg->getIntRegVal(rs1Int);
+        float rs1Val = temp;
+        reg->setFloatRegVal(*(unsigned int *)&rs1Val, rdInt);
+    }
+    else if(rs2Int == 2)
+    {
+        long long temp = reg->getIntRegVal(rs1Int);
+        float rs1Val = temp;
+        reg->setFloatRegVal(*(unsigned int *)&rs1Val, rdInt);
+    }
+    else if(rs2Int == 3)
+    {
+        ULL temp = reg->getIntRegVal(rs1Int);
+        float rs1Val = temp;
+        reg->setFloatRegVal(*(unsigned int *)&rs1Val, rdInt);
+    }
+    else
+    {
+        cout << "fcvt.s.* ins was wrong!" << endl;
+        cout << "Exit!" << endl;
         assert(false);
     }
 }
-inline void FCVT_SL_SW(int rs1Int, int rs2Int, int rdInt, int rmInt) {
-    if (rs2Int == 0) {
-        float rs1Val = reg->getFloatRegVal(rs1Int);
-        reg->setIntRegVal((int)rs1Val, rdInt);
-    } else if (rs2Int == 1) {
-        float rs1Val = reg->getFloatRegVal(rs1Int);
-        reg->setIntRegVal((unsigned int)rs1Val, rdInt);
-    } else if (rs2Int == 2) {
-        float rs1Val = reg->getFloatRegVal(rs1Int);
-        reg->setIntRegVal((long long)rs1Val, rdInt);
-    } else if (rs2Int == 3) {
-        float rs1Val = reg->getFloatRegVal(rs1Int);
-        reg->setIntRegVal((unsigned long long)rs1Val, rdInt);
-    } else {
-        cerr << "fcvt.*.s ins was wrong!" << endl;
-        cerr << "Exit!" << endl;
-        assert(false);
-    }
-}
+
+// inline void FCVT_SL_SW(int rs1Int, int rs2Int, int rdInt, int rmInt) {
+//     if (rs2Int == 0) {
+//         float rs1Val = reg->getFloatRegVal(rs1Int);
+//         reg->setIntRegVal((int)rs1Val, rdInt);
+//     } else if (rs2Int == 1) {
+//         float rs1Val = reg->getFloatRegVal(rs1Int);
+//         reg->setIntRegVal((unsigned int)rs1Val, rdInt);
+//     } else if (rs2Int == 2) {
+//         float rs1Val = reg->getFloatRegVal(rs1Int);
+//         reg->setIntRegVal((long long)rs1Val, rdInt);
+//     } else if (rs2Int == 3) {
+//         float rs1Val = reg->getFloatRegVal(rs1Int);
+//         reg->setIntRegVal((unsigned long long)rs1Val, rdInt);
+//     } else {
+//         cerr << "fcvt.*.s ins was wrong!" << endl;
+//         cerr << "Exit!" << endl;
+//         assert(false);
+//     }
+// }
 /*
 the control logic
 */
@@ -1442,19 +1512,13 @@ inline void FLoad_funct3() {
 
     int funct3 = SUBINT(content, 12, 3);
     if (funct3 == 0B10) {
-        union{
-            float fl;
-            unsigned int ui;
-        }loadData;
-        loadData.ui = (unsigned int)((ULL)memory[immediateNum + rs1Val]);
-        reg->setFloatRegVal(loadData.fl, rdInt);
+        unsigned int loadData;
+        loadData = (unsigned int)(memory[immediateNum + rs1Val]);
+        reg->setFloatRegVal(loadData, rdInt);
     } else if (funct3 == 0B11) {
-        union{
-            double db;
-            unsigned long long dword;
-        }loadData;
-        loadData.dword = memory[immediateNum + rs1Val];
-        reg->setFloatRegVal(loadData.db, rdInt);
+        ULL loadData;
+        loadData = memory[immediateNum + rs1Val];
+        reg->setFloatRegVal(loadData, rdInt);
     } else {
         cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "float load funct3 error!" << endl;
@@ -1472,25 +1536,17 @@ inline void FStore_funct3() {
     // get the immediate number and get sign-extended
 
     LL rs1Val = (LL)reg->getIntRegVal(rs1Int);
-    LL memoryAddr = immediateNum + rs1Val;
+    ULL memoryAddr = immediateNum + rs1Val;
 
     int funct3 = SUBINT(content, 12, 3);
     if (funct3 == 0B10) {
-        union{
-            float fl;
-            unsigned int ui;
-        }rs2Val;
-        rs2Val.fl = reg->getFloatRegVal(rs2Int);
+        unsigned int rs2Val = reg->getFloatRegVal(rs2Int);
         // mymem.rwmemWriteWord(*((unsigned int *)(&rs2Val)), memoryAddr);
-        memoryWrite(memoryAddr, rs2Val.ui, 4);
+        memoryWrite(memoryAddr, rs2Val, 4);
     } else if (funct3 == 0B11) {
-        union{
-            double db;
-            unsigned long long dword;
-        }rs2Val;
-        rs2Val.db = reg->getFloatRegVal(rs2Int);
+        ULL rs2Val = reg->getFloatRegVal(rs2Int);
         // mymem.rwmemWriteDword(*((ULL *)(&rs2val)), memoryAddr);
-        memoryWrite(memoryAddr, rs2Val.dword, 8);
+        memoryWrite(memoryAddr, rs2Val, 8);
     } else {
         cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "float load funct3 error!" << endl;
@@ -1507,17 +1563,19 @@ inline void FMadd_funct2() {
 
     int funct2 = SUBINT(content, 25, 2);
     if (funct2 == 0) {
-        float rs1Val = reg->getFloatRegVal(rs1Int);
-        float rs2Val = reg->getFloatRegVal(rs2Int);
-        float rs3Val = reg->getFloatRegVal(rs3Int);
-        float rdVal = rs1Val * rs2Val + rs3Val;
-        reg->setFloatRegVal(rdVal, rdInt);
+        float_32 rs1Val, rs2Val, rs3Val;
+        rs1Val.ui = reg->getFloatRegVal(rs1Int);
+        rs2Val.ui = reg->getFloatRegVal(rs2Int);
+        rs3Val.ui = reg->getFloatRegVal(rs3Int);
+        float rdVal = rs1Val.fl * rs2Val.fl + rs3Val.fl;
+        reg->setFloatRegVal(*(unsigned int*)&rdVal, rdInt);
     } else if (funct2 == 1) {
-        double rs1val = reg->getFloatRegVal(rs1Int);
-        double rs2val = reg->getFloatRegVal(rs2Int);
-        double rs3val = reg->getFloatRegVal(rs3Int);
-        double rdval = rs1val * rs2val + rs3val;
-        reg->setFloatRegVal(rdval, rdInt);
+        double_64 rs1val, rs2val, rs3val;
+        rs1val.dword = reg->getFloatRegVal(rs1Int);
+        rs2val.dword = reg->getFloatRegVal(rs2Int);
+        rs3val.dword = reg->getFloatRegVal(rs3Int);
+        double rdval = rs1val.db * rs2val.db + rs3val.db;
+        reg->setFloatRegVal(*(ULL*)&rdval, rdInt);
     } else {
         cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "fmadd funct2 error!" << endl;
@@ -1534,17 +1592,19 @@ inline void FMsub_funct2() {
 
     int funct2 = SUBINT(content, 25, 2);
     if (funct2 == 0) {
-        float rs1Val = reg->getFloatRegVal(rs1Int);
-        float rs2Val = reg->getFloatRegVal(rs2Int);
-        float rs3Val = reg->getFloatRegVal(rs3Int);
-        float rdVal = rs1Val * rs2Val - rs3Val;
-        reg->setFloatRegVal(rdVal, rdInt);
+        float_32 rs1Val, rs2Val, rs3Val;
+        rs1Val.ui = reg->getFloatRegVal(rs1Int);
+        rs2Val.ui = reg->getFloatRegVal(rs2Int);
+        rs3Val.ui = reg->getFloatRegVal(rs3Int);
+        float rdVal = rs1Val.fl * rs2Val.fl - rs3Val.fl;
+        reg->setFloatRegVal(*(unsigned int*)&rdVal, rdInt);
     } else if (funct2 == 1) {
-        double rs1val = reg->getFloatRegVal(rs1Int);
-        double rs2val = reg->getFloatRegVal(rs2Int);
-        double rs3val = reg->getFloatRegVal(rs3Int);
-        double rdval = rs1val * rs2val - rs3val;
-        reg->setFloatRegVal(rdval, rdInt);
+        double_64 rs1val, rs2val, rs3val;
+        rs1val.dword = reg->getFloatRegVal(rs1Int);
+        rs2val.dword = reg->getFloatRegVal(rs2Int);
+        rs3val.dword = reg->getFloatRegVal(rs3Int);
+        double rdval = rs1val.db * rs2val.db - rs3val.db;
+        reg->setFloatRegVal(*(ULL*)&rdval, rdInt);
     } else {
         cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "fmsub funct2 error!" << endl;
@@ -1561,17 +1621,19 @@ inline void FNMsub_funct2() {
 
     int funct2 = SUBINT(content, 25, 2);
     if (funct2 == 0) {
-        float rs1Val = reg->getFloatRegVal(rs1Int);
-        float rs2Val = reg->getFloatRegVal(rs2Int);
-        float rs3Val = reg->getFloatRegVal(rs3Int);
-        float rdVal = -(rs1Val * rs2Val - rs3Val);
-        reg->setFloatRegVal(rdVal, rdInt);
+        float_32 rs1Val, rs2Val, rs3Val;
+        rs1Val.ui = reg->getFloatRegVal(rs1Int);
+        rs2Val.ui = reg->getFloatRegVal(rs2Int);
+        rs3Val.ui = reg->getFloatRegVal(rs3Int);
+        float rdVal = -(rs1Val.fl * rs2Val.fl - rs3Val.fl);
+        reg->setFloatRegVal(*(unsigned int*)&rdVal, rdInt);
     } else if (funct2 == 1) {
-        double rs1val = reg->getFloatRegVal(rs1Int);
-        double rs2val = reg->getFloatRegVal(rs2Int);
-        double rs3val = reg->getFloatRegVal(rs3Int);
-        double rdval = -(rs1val * rs2val - rs3val);
-        reg->setFloatRegVal(rdval, rdInt);
+        double_64 rs1val, rs2val, rs3val;
+        rs1val.dword = reg->getFloatRegVal(rs1Int);
+        rs2val.dword = reg->getFloatRegVal(rs2Int);
+        rs3val.dword = reg->getFloatRegVal(rs3Int);
+        double rdval = -(rs1val.db * rs2val.db - rs3val.db);
+        reg->setFloatRegVal(*(ULL*)&rdval, rdInt);
     } else {
         cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "fnmsub funct2 error!" << endl;
@@ -1588,17 +1650,19 @@ inline void FNMadd_funct2() {
 
     int funct2 = SUBINT(content, 25, 2);
     if (funct2 == 0) {
-        float rs1Val = reg->getFloatRegVal(rs1Int);
-        float rs2Val = reg->getFloatRegVal(rs2Int);
-        float rs3Val = reg->getFloatRegVal(rs3Int);
-        float rdVal = -(rs1Val * rs2Val + rs3Val);
-        reg->setFloatRegVal(rdVal, rdInt);
+        float_32 rs1Val, rs2Val, rs3Val;
+        rs1Val.ui = reg->getFloatRegVal(rs1Int);
+        rs2Val.ui = reg->getFloatRegVal(rs2Int);
+        rs3Val.ui = reg->getFloatRegVal(rs3Int);
+        float rdVal = -(rs1Val.fl * rs2Val.fl + rs3Val.fl);
+        reg->setFloatRegVal(*(unsigned int*)&rdVal, rdInt);
     } else if (funct2 == 1) {
-        double rs1val = reg->getFloatRegVal(rs1Int);
-        double rs2val = reg->getFloatRegVal(rs2Int);
-        double rs3val = reg->getFloatRegVal(rs3Int);
-        double rdval = -(rs1val * rs2val + rs3val);
-        reg->setFloatRegVal(rdval, rdInt);
+        double_64 rs1val, rs2val, rs3val;
+        rs1val.dword = reg->getFloatRegVal(rs1Int);
+        rs2val.dword = reg->getFloatRegVal(rs2Int);
+        rs3val.dword = reg->getFloatRegVal(rs3Int);
+        double rdval = -(rs1val.db * rs2val.db + rs3val.db);
+        reg->setFloatRegVal(*(ULL*)&rdval, rdInt);
     } else {
         cerr << "Error when parsing instruction: " << hex << content << endl;
         cerr << "fnmadd funct2 error!" << endl;
@@ -1670,9 +1734,9 @@ inline void F_TYPE_funct7() {
         case 0B1101000:
             FCVT_SW_SL(rs1Int, rs2Int, rdInt, rmInt);
             break;
-        case 0B1100000:
-            FCVT_SL_SW(rs1Int, rs2Int, rdInt, rmInt);
-            break;
+//        case 0B1100000:
+//            FCVT_SL_SW(rs1Int, rs2Int, rdInt, rmInt);
+//            break;
         default:
             cerr << "Error when parsing instruction: " << hex << content << endl;
             cerr << "F-TYPE funct7 error!" << endl;
@@ -1745,14 +1809,14 @@ inline void getOpcode() {
 int decode(ULL startAddr, bool enable_debug) {
     reg = new RegisterFile;
     Initialize(startAddr);  // Initialize some variables and prepare for the
-                            // decode part
+    // decode part
     bool flag = false;
     debuger mydb = debuger(memory, reg);
     while (!is_exit) {
-        if (enable_debug){ 
-			mydb.wait();
-			ins_counter++;
-		}
+        if (enable_debug){
+            mydb.wait();
+            ins_counter++;
+        }
 
         // cout << "PC: " << reg->getPC() << endl;
         //cerr << "PC: hex " << std::hex << reg->getPC() << endl;
