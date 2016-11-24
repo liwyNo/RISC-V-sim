@@ -11,6 +11,9 @@
 using namespace std;
 #define MASK(x) ((1ULL << x) - 1)
 #define SUBINT(x,y,z) (((x) >> (y)) & MASK((z)))
+#define getIntRegVal(y) x[(y)]
+#define getFloatRegVal(y) f[(y)]
+
 long long ins_counter = 0;
 RegisterFile *reg;
 extern VM memory;
