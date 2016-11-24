@@ -31,7 +31,7 @@ inline void memoryWrite(ULL offset, ULL value, unsigned char bit) {
     ULL ori = memory[offset];
     ULL mask = bit == 8 ? ~0ULL : ((1ULL << (bit * 8)) - 1);
     ori = (ori & ~mask) | (value & mask);
-    memory[offset] = ori;
+    memory.load((char*)&ori, offset, 8);
 }
 
 // Initialize the map index and register file

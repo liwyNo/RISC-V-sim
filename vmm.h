@@ -16,7 +16,7 @@ struct VM {
     unsigned long long TLB[3];
     unsigned char* TLBB[3];
     std::unordered_map<unsigned long long, unsigned char*> vm_pool;
-    block operator[](unsigned long long offset);
+    unsigned long long operator[](unsigned long long offset);
     VM(){
         unsigned char* tmp = vm_pool[0] = new unsigned char[PAGE_SIZE];
         for(int i = 0; i < 3; ++i){
@@ -93,20 +93,20 @@ struct VM {
         return TLBB[0];
     }
 };
-struct block {
-    unsigned long long offset;
-    unsigned long long content;
-    VM* vm;
-    block(unsigned long long _offset, VM* _vm) : offset(_offset), vm(_vm) {}
-    operator unsigned long long() {
-        vm->store((char*)&content, offset, 8);
-        return content;
-    }
-    block& operator=(const unsigned long long content) {
-        this->content = content;
-        vm->load((char*)&(this->content), offset, 8);
-        return *this;
-    }
-};
+//struct block {
+//    unsigned long long offset;
+//    unsigned long long content;
+//    VM* vm;
+//    block(unsigned long long _offset, VM* _vm) : offset(_offset), vm(_vm) {}
+//    operator unsigned long long() {
+//        vm->store((char*)&content, offset, 8);
+//        return content;
+//    }
+//    block& operator=(const unsigned long long content) {
+//        this->content = content;
+//        vm->load((char*)&(this->content), offset, 8);
+//        return *this;
+//    }
+//};
 
 #endif  // RISCV_SIM_VMM_H

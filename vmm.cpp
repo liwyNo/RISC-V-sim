@@ -3,4 +3,10 @@
 //
 
 #include "vmm.h"
-block VM::operator[](unsigned long long offset) { return block(offset, this); }
+
+unsigned long long VM::operator[](unsigned long long offset) {
+    //return block(offset, this);
+    unsigned long long cnt;
+    store((char*)&cnt, offset, 8);
+    return cnt;
+}
